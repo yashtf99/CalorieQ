@@ -232,6 +232,17 @@ class SchemaBuilder:
         )
         Index("idx_messages_session", chat_messages.c.session_id)
 
+        # ── refresh_tokens ─────────────────────────────────────────────────────
+        refresh_tokens = Table("refresh_tokens", m,
+            _pk(),
+            _uid("users.id"),
+            Column("token_hash", CHAR(64),  nullable=False, unique=True),
+            Column("expires_at", DateTime,  nullable=False),
+            Column("revoked",    Boolean,   nullable=False, server_default=text("0")),
+            _ts(),
+        )
+        Index("idx_refresh_tokens_user", refresh_tokens.c.user_id)
+
     # ── public ─────────────────────────────────────────────────────────────────
 
     def create(self, engine: Engine, *, drop: bool = False) -> None:

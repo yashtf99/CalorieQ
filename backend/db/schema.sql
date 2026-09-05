@@ -181,3 +181,17 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   FOREIGN KEY (user_id)    REFERENCES users          (id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_messages_session ON chat_messages (session_id);
+
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id         TEXT     NOT NULL,
+  user_id    TEXT     NOT NULL,
+  token_hash TEXT     NOT NULL,
+  expires_at DATETIME NOT NULL,
+  revoked    INTEGER  NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE (token_hash),
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);

@@ -1,3 +1,8 @@
+# ── CalorieQ custom rules ─────────────────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+
 */.claude/
 
 # Byte-compiled / optimized / DLL files
