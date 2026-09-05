@@ -43,17 +43,11 @@ def create_custom_food(
     item = FoodItem(
         id=str(uuid.uuid4()),
         source="user_custom",
-        name=req.name,
-        category=req.category,
-        energy_kcal=req.energy_kcal,
-        protein_g=req.protein_g,
-        carb_g=req.carb_g,
-        fat_g=req.fat_g,
-        fibre_g=req.fibre_g,
-        sodium_mg=req.sodium_mg,
         is_verified=False,
         created_by=user_id,
     )
+    for field, value in req.model_dump(exclude_none=True).items():
+        setattr(item, field, value)
     db.add(item)
     db.commit()
     db.refresh(item)

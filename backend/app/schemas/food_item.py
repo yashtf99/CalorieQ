@@ -73,11 +73,51 @@ FoodSource = Literal["indb", "usda", "user_custom"]
 
 
 class CustomFoodItemIn(BaseModel):
+    # Required
     name: str = Field(min_length=1, max_length=500)
-    category: str | None = Field(default=None, max_length=255)
     energy_kcal: float = Field(ge=0, lt=10_000)
+
+    # Optional basics
+    category: str | None = Field(default=None, max_length=255)
+    energy_kj: float | None = Field(default=None, ge=0, lt=42_000)
     protein_g: float | None = Field(default=None, ge=0, lt=600)
     carb_g: float | None = Field(default=None, ge=0, lt=1_000)
     fat_g: float | None = Field(default=None, ge=0, lt=600)
+    freesugar_g: float | None = Field(default=None, ge=0, lt=1_000)
     fibre_g: float | None = Field(default=None, ge=0, lt=200)
+    sfa_g: float | None = Field(default=None, ge=0, lt=600)
+    mufa_g: float | None = Field(default=None, ge=0, lt=600)
+    pufa_g: float | None = Field(default=None, ge=0, lt=600)
+    cholesterol_mg: float | None = Field(default=None, ge=0, lt=10_000)
+
+    # Minerals
+    calcium_mg: float | None = Field(default=None, ge=0, lt=10_000)
+    phosphorus_mg: float | None = Field(default=None, ge=0, lt=10_000)
+    magnesium_mg: float | None = Field(default=None, ge=0, lt=10_000)
     sodium_mg: float | None = Field(default=None, ge=0, lt=20_000)
+    potassium_mg: float | None = Field(default=None, ge=0, lt=20_000)
+    iron_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    copper_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    selenium_ug: float | None = Field(default=None, ge=0, lt=10_000)
+    chromium_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    manganese_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    molybdenum_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    zinc_mg: float | None = Field(default=None, ge=0, lt=1_000)
+
+    # Vitamins
+    vita_ug: float | None = Field(default=None, ge=0, lt=100_000)
+    vite_mg: float | None = Field(default=None, ge=0, lt=10_000)
+    vitd2_ug: float | None = Field(default=None, ge=0, lt=10_000)
+    vitd3_ug: float | None = Field(default=None, ge=0, lt=10_000)
+    vitk1_ug: float | None = Field(default=None, ge=0, lt=10_000)
+    vitk2_ug: float | None = Field(default=None, ge=0, lt=10_000)
+    folate_ug: float | None = Field(default=None, ge=0, lt=10_000)
+    vitb1_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    vitb2_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    vitb3_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    vitb5_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    vitb6_mg: float | None = Field(default=None, ge=0, lt=1_000)
+    vitb7_ug: float | None = Field(default=None, ge=0, lt=10_000)
+    vitb9_ug: float | None = Field(default=None, ge=0, lt=10_000)
+    vitc_mg: float | None = Field(default=None, ge=0, lt=10_000)
+    carotenoids_ug: float | None = Field(default=None, ge=0, lt=100_000)
