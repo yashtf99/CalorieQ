@@ -22,9 +22,13 @@ def _assert_owned(log: MealLog, user_id: str) -> None:
 
 
 def create_meal_log(db: Session, user_id: str, req: MealLogIn) -> MealLog:
-    # Store as naive UTC — SQLite has no timezone type; naive UTC is the convention throughout.
+    # Always store as naive UTC — SQLite has no timezone type.
+    # Convert to UTC *before* stripping tzinfo so +05:30 offsets aren't silently treated as UTC.
     raw_logged_at = req.logged_at or datetime.now(timezone.utc)
-    logged_at = raw_logged_at.replace(tzinfo=None) if raw_logged_at.tzinfo else raw_logged_at
+    if raw_logged_at.tzinfo is not None:
+        logged_at = raw_logged_at.astimezone(timezone.utc).replace(tzinfo=None)
+    else:
+        logged_at = raw_logged_at
 
     if req.food_item_id:
         food = db.query(FoodItem).filter(FoodItem.id == req.food_item_id).first()
@@ -120,7 +124,10 @@ def update_meal_log(db: Session, user_id: str, log_id: str, req: MealLogPatchIn)
     if req.meal_type is not None:
         log.meal_type = req.meal_type
     if req.logged_at is not None:
-        log.logged_at = req.logged_at
+        if req.logged_at.tzinfo is not None:
+            log.logged_at = req.logged_at.astimezone(timezone.utc).replace(tzinfo=None)
+        else:
+            log.logged_at = req.logged_at
     if req.notes is not None:
         log.notes = req.notes
 

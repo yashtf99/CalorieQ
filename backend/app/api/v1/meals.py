@@ -15,13 +15,43 @@ from app.services import meal_log_service
 router = APIRouter(prefix="/meals", tags=["meals"])
 
 
+def _parse_bound(value: str, user_tz, is_end_date_only: bool = False) -> datetime:
+    """
+    Parse a date or datetime string into a tz-aware datetime.
+
+    Accepted formats:
+      - YYYY-MM-DD            → treated as midnight in user_tz
+                                (if is_end_date_only, extended to next midnight so the
+                                 whole day is included in a half-open [start, end) range)
+      - YYYY-MM-DDTHH:MM:SS   → naive, treated as user_tz
+      - YYYY-MM-DDTHH:MM      → naive, treated as user_tz
+      - YYYY-MM-DDTHH:MM:SS±HH:MM  → explicit offset, used directly
+    """
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError:
+        raise UnprocessableError(
+            f"Cannot parse '{value}'. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS"
+        )
+
+    is_date_only = "T" not in value and " " not in value
+
+    if dt.tzinfo is None:
+        dt = user_tz.localize(dt)
+
+    if is_date_only and is_end_date_only:
+        dt = dt + timedelta(days=1)
+
+    return dt
+
+
 def _resolve_date_range(
     date: str | None,
     start: str | None,
     end: str | None,
     tz: str,
 ) -> tuple[datetime, datetime]:
-    """Convert user-facing date params to UTC datetime bounds."""
+    """Return UTC-aware (start_inclusive, end_exclusive) bounds."""
     if date and (start or end):
         raise UnprocessableError("Use either date or start/end — not both")
     if (start and not end) or (end and not start):
@@ -33,18 +63,20 @@ def _resolve_date_range(
         raise UnprocessableError(f"Unknown timezone: {tz}")
 
     if date:
-        day = datetime.strptime(date, "%Y-%m-%d").date()
+        try:
+            day = datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            raise UnprocessableError("date must be YYYY-MM-DD")
         start_local = user_tz.localize(datetime.combine(day, time.min))
         end_local = start_local + timedelta(days=1)
+
     elif start and end:
-        start_day = datetime.strptime(start, "%Y-%m-%d").date()
-        end_day = datetime.strptime(end, "%Y-%m-%d").date()
-        if end_day < start_day:
-            raise UnprocessableError("end must be on or after start")
-        start_local = user_tz.localize(datetime.combine(start_day, time.min))
-        end_local = user_tz.localize(datetime.combine(end_day, time.min)) + timedelta(days=1)
+        start_local = _parse_bound(start, user_tz, is_end_date_only=False)
+        end_local = _parse_bound(end, user_tz, is_end_date_only=True)
+        if end_local <= start_local:
+            raise UnprocessableError("end must be after start")
+
     else:
-        # No params — default to today in user's timezone
         today = datetime.now(user_tz).date()
         start_local = user_tz.localize(datetime.combine(today, time.min))
         end_local = start_local + timedelta(days=1)
@@ -63,9 +95,9 @@ def create_meal(
 
 @router.get("", response_model=PaginatedResponse[MealLogOut])
 def list_meals(
-    date: str | None = Query(default=None, description="YYYY-MM-DD single day"),
-    start: str | None = Query(default=None, description="YYYY-MM-DD range start"),
-    end: str | None = Query(default=None, description="YYYY-MM-DD range end"),
+    date: str | None = Query(default=None, description="YYYY-MM-DD — whole day shortcut"),
+    start: str | None = Query(default=None, description="YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS (range start, inclusive)"),
+    end: str | None = Query(default=None, description="YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS (range end — date inclusive, datetime exclusive)"),
     tz: str = Query(default="UTC", description="IANA timezone e.g. Asia/Kolkata"),
     meal_type: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
