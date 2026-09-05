@@ -4,9 +4,10 @@ from datetime import datetime, timezone
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
 from app.models.food_item import FoodItem
 from app.models.food_portion import FoodPortion
+from app.models.meal_log import MealLog
 from app.schemas.food_item import CustomFoodItemIn
 
 
@@ -77,10 +78,7 @@ def delete_custom_food(db: Session, user_id: str, food_id: str) -> None:
     if item.source != "user_custom" or item.created_by != user_id:
         raise ForbiddenError("Cannot delete this food item")
 
-    from app.models.meal_log import MealLog
-    referenced = db.query(MealLog).filter(MealLog.food_item_id == food_id).first()
-    if referenced:
-        from app.core.exceptions import ConflictError
+    if db.query(MealLog).filter(MealLog.food_item_id == food_id).first():
         raise ConflictError("Food item is referenced by meal logs and cannot be deleted")
 
     db.delete(item)
