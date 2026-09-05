@@ -5,7 +5,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 # Import all models so Base.metadata knows about them before create_all
+from app.models.food_item import FoodItem  # noqa: F401
+from app.models.food_portion import FoodPortion  # noqa: F401
 from app.models.goal import Goal  # noqa: F401
+from app.models.meal_log import MealLog  # noqa: F401
 from app.models.refresh_token import RefreshToken  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.models.user_profile import UserProfile  # noqa: F401
