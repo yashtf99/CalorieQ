@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ForbiddenError, NotFoundError, UnprocessableError
@@ -105,7 +106,7 @@ def list_meal_logs(
     if meal_type:
         q = q.filter(MealLog.meal_type == meal_type)
 
-    total = q.count()
+    total = q.with_entities(func.count()).scalar()
     logs = q.order_by(MealLog.logged_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     return logs, total
 

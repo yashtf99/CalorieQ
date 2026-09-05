@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
@@ -25,7 +25,7 @@ def search_food_items(
     if source:
         query = query.filter(FoodItem.source == source)
 
-    total = query.count()
+    total = query.with_entities(func.count()).scalar()
     items = query.order_by(FoodItem.name).offset((page - 1) * page_size).limit(page_size).all()
     return items, total
 

@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import NotFoundError
@@ -50,8 +51,12 @@ def get_active_goal(db: Session, user_id: str) -> Goal:
 
 
 def get_history(db: Session, user_id: str, page: int, page_size: int) -> tuple[list[Goal], int]:
-    # active_from is set Python-side with microsecond precision — reliable sort key even in tests
-    q = db.query(Goal).filter(Goal.user_id == user_id).order_by(Goal.active_from.desc())
-    total = q.count()
-    goals = q.offset((page - 1) * page_size).limit(page_size).all()
+    base = db.query(Goal).filter(Goal.user_id == user_id)
+    total = base.with_entities(func.count()).scalar()
+    goals = (
+        base.order_by(Goal.active_from.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
     return goals, total
