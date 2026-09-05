@@ -1,5 +1,27 @@
-python-dotenv==1.2.1
-langchain-aws==0.2.35
-boto3==1.42.97
-langchain-core==0.3.86
+# Web framework
+fastapi>=0.115
+uvicorn[standard]>=0.30
+
+# Data validation & settings
 pydantic==2.13.5
+pydantic-settings>=2.3
+
+# Database
+sqlalchemy>=2.0
+
+# AI / LLM
+langchain-aws==0.2.35
+langchain-core==0.3.86
+langgraph>=0.2
+boto3==1.42.97
+
+# Auth
+passlib[bcrypt]>=1.7
+python-jose[cryptography]>=3.3
+
+# Data processing (ingestion scripts)
+pandas>=2.2
+openpyxl>=3.1
+
+# Utilities
+python-dotenv==1.2.1
