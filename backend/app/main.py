@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.router import router
+from app.core.aws_init import ensure_aws_credentials
+
+ensure_aws_credentials()
 
 app = FastAPI(title="CalorieQ API", version="1.0.0")
 

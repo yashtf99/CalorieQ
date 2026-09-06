@@ -203,7 +203,7 @@ Stores user query and assistant response as a pair per turn.
 |---|---|---|
 | `id` | CHAR(36) PK | UUID |
 | `session_id` | CHAR(36) FK → chat_sessions | |
-| `user_id` | CHAR(36) FK → users | |
+| `user_id` | CHAR(36) FK → users | |           # This shouldnt be here, remove in future
 | `user_query` | TEXT NOT NULL | |
 | `chat_response` | TEXT NOT NULL | |
 | `created_at` | DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP | UTC |

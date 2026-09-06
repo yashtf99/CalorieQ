@@ -7,10 +7,12 @@ import DashboardPage from '@/pages/DashboardPage'
 import LoginPage from '@/pages/LoginPage'
 import ProfilePage from '@/pages/ProfilePage'
 import RegisterPage from '@/pages/RegisterPage'
+import FloatingChatWidget from '@/components/chat/FloatingChatWidget'
 
 export default function App() {
   return (
     <BrowserRouter>
+      <FloatingChatWidget />
       <Routes>
         {/* Public */}
         <Route element={<AuthLayout />}>

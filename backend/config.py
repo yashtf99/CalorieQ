@@ -26,7 +26,10 @@ class Settings(BaseSettings):
 
     # ── AWS / Bedrock ──────────────────────────────────────────────────────────
     AWS_REGION: str = "us-east-1"
-    BEDROCK_MODEL_ID: str = "us.amazon.nova-lite-v1:0"
+    BEDROCK_MODEL_ID: str = "global.amazon.nova-2-lite-v1:0"
+
+    # ── Chat ───────────────────────────────────────────────────────────────────
+    CHAT_SESSION_TIMEOUT_MINUTES: int = 20  # Reuse session within this window
 
     # ── Secrets (set in .env) ──────────────────────────────────────────────────
     SECRET_KEY: str = _DEV_SECRET

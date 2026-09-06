@@ -11,10 +11,9 @@ email-validator>=2.0
 sqlalchemy>=2.0
 
 # AI / LLM
-langchain-aws==0.2.35
-langchain-core==0.3.86
-langgraph>=0.2
-boto3==1.42.97
+langchain==1.4.0
+langchain-core==1.6.2
+langchain-aws==1.7.5
 
 # Auth
 passlib[bcrypt]>=1.7
