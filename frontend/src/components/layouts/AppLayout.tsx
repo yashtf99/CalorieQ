@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils'
 const NAV_LINKS = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/analytics', label: 'Analytics' },
-  { to: '/history', label: 'History' },
 ]
 
 export default function AppLayout() {
