@@ -1,8 +1,0 @@
-[2026-09-06 18:39:33] Starting CalorieQ frontend...
-[2026-09-06 18:39:35] > calorieq-frontend@0.0.0 dev
-[2026-09-06 18:39:35] > vite
-[2026-09-06 18:39:36] 6:39:36 pm [vite] (client) Re-optimizing dependencies because vite config has changed
-[2026-09-06 18:39:36]   VITE v8.2.2  ready in 1120 ms
-[2026-09-06 18:39:36]   ➜  Local:   http://localhost:5173/
-[2026-09-06 18:39:36]   ➜  Network: use --host to expose
-[2026-09-06 18:39:37] 6:39:37 pm [vite] (client) [optimizer] bundling dependencies...

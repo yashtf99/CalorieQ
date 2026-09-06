@@ -17,25 +17,71 @@ cd backend && bash start.sh
 cd frontend && bash start.sh
 ```
 
-Logs are written to `backend/logs/backend.log` and `frontend/logs/frontend.log`.  
-Follow live: `tail -f backend/logs/backend.log`
+**What the scripts do:**
+- **Backend** (`backend/start.sh`):
+  - Activates the Python virtual environment (`.venv`)
+  - Starts Uvicorn server with auto-reload on file changes
+  - Logs to `backend/logs/backend.log` with timestamps
+  
+- **Frontend** (`frontend/start.sh`):
+  - Starts Vite dev server (HMR enabled for live code updates)
+  - Logs to `frontend/logs/frontend.log` with timestamps
+  - Strips ANSI color codes for clean log files
+
+**Monitor logs live:**
+```bash
+tail -f backend/logs/backend.log
+tail -f frontend/logs/frontend.log
+```
+
+**Troubleshooting:**
+- If `start.sh` fails: ensure you're in the correct directory (`backend/` or `frontend/`)
+- If permission denied: run `chmod +x start.sh` in that directory
+- If port already in use: kill processes below, then retry
 
 ### Kill processes
 
-**Git Bash:**
+When you need to stop the servers (or if they're stuck):
+
+**Git Bash / WSL:**
 ```bash
+# Kill all Python processes (backend)
+taskkill //F //IM python.exe
+
+# Kill all Node processes (frontend)
+taskkill //F //IM node.exe
+
+# Or kill both at once
 taskkill //F //IM uvicorn.exe; taskkill //F //IM node.exe; taskkill //F //IM python.exe
 ```
 
 **PowerShell:**
 ```powershell
+# Kill by process name
+taskkill /F /IM python.exe
+taskkill /F /IM node.exe
+
+# Or kill both
 taskkill /F /IM uvicorn.exe; taskkill /F /IM node.exe; taskkill /F /IM python.exe
 ```
 
-**Kill by port (PowerShell):**
+**Kill by port (find and kill a specific process):**
 ```powershell
-netstat -ano | findstr :8000   # find PID
-taskkill /F /PID <pid>
+# Find what's using port 8000 (backend)
+netstat -ano | findstr :8000
+# Output: TCP  127.0.0.1:8000  0.0.0.0:0  LISTENING  12345
+# Kill by PID
+taskkill /F /PID 12345
+
+# Find what's using port 5173 (frontend)
+netstat -ano | findstr :5173
+```
+
+**Verify processes are stopped:**
+```bash
+# Check if ports are free
+netstat -ano | findstr ":8000\|:5173"
+# Should return nothing if both are stopped
 ```
 
 ---
