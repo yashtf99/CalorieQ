@@ -348,6 +348,78 @@ def test_patch_freeform_meal_overrides_nutrition(client, token_headers):
     r = client.patch(f"{MEALS}/{log_id}", json={"energy_kcal": 300.0}, headers=token_headers)
     assert r.status_code == 200
     assert r.json()["energy_kcal"] == 300.0
+def test_patch_freeform_meal_overrides_nutrition(client, token_headers):
+    log_id = client.post(MEALS, json=_FREE_MEAL, headers=token_headers).json()["id"]
+    r = client.patch(f"{MEALS}/{log_id}", json={"energy_kcal": 300.0}, headers=token_headers)
+    assert r.status_code == 200
+    assert r.json()["energy_kcal"] == 300.0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Default meal times
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_default_meal_time_breakfast(client, token_headers):
+    """Breakfast should default to 9:00 AM when no logged_at is provided."""
+    meal = {**_FREE_MEAL, "meal_type": "breakfast"}
+    r = client.post(MEALS, json=meal, headers=token_headers)
+    assert r.status_code == 201
+    body = r.json()
+    # Should have 9:00 AM time (09:00:00)
+    assert "09:00:00" in body["logged_at"]
+
+
+def test_default_meal_time_lunch(client, token_headers):
+    """Lunch should default to 1:00 PM (13:00:00) when no logged_at is provided."""
+    meal = {**_FREE_MEAL, "meal_type": "lunch"}
+    r = client.post(MEALS, json=meal, headers=token_headers)
+    assert r.status_code == 201
+    body = r.json()
+    # Should have 1:00 PM time (13:00:00)
+    assert "13:00:00" in body["logged_at"]
+
+
+def test_default_meal_time_snacks(client, token_headers):
+    """Snacks should default to 5:00 PM (17:00:00) when no logged_at is provided."""
+    meal = {**_FREE_MEAL, "meal_type": "snacks"}
+    r = client.post(MEALS, json=meal, headers=token_headers)
+    assert r.status_code == 201
+    body = r.json()
+    # Should have 5:00 PM time (17:00:00)
+    assert "17:00:00" in body["logged_at"]
+
+
+def test_default_meal_time_dinner(client, token_headers):
+    """Dinner should default to 9:00 PM (21:00:00) when no logged_at is provided."""
+    meal = {**_FREE_MEAL, "meal_type": "dinner"}
+    r = client.post(MEALS, json=meal, headers=token_headers)
+    assert r.status_code == 201
+    body = r.json()
+    # Should have 9:00 PM time (21:00:00)
+    assert "21:00:00" in body["logged_at"]
+
+
+def test_default_meal_time_with_explicit_date(client, token_headers):
+    """When logged_at includes date AND time, both should be respected."""
+    meal = {**_FREE_MEAL, "meal_type": "breakfast", "logged_at": "2024-03-10T14:30:00Z"}
+    r = client.post(MEALS, json=meal, headers=token_headers)
+    assert r.status_code == 201
+    body = r.json()
+    # Should have the explicitly provided time, not breakfast default
+    assert "2024-03-10" in body["logged_at"]
+    assert "14:30:00" in body["logged_at"]
+    assert "09:00:00" not in body["logged_at"]
+
+
+def test_custom_logged_at_overrides_default(client, token_headers):
+    """When logged_at is explicitly provided, it should override default time."""
+    meal = {**_FREE_MEAL, "meal_type": "breakfast", "logged_at": "2024-06-15T14:30:00Z"}
+    r = client.post(MEALS, json=meal, headers=token_headers)
+    assert r.status_code == 201
+    body = r.json()
+    # Should have 14:30:00, not the default 09:00:00
+    assert "14:30:00" in body["logged_at"]
+    assert "09:00:00" not in body["logged_at"]
 
 
 def test_patch_linked_meal_nutrition_fields_ignored(client, token_headers):

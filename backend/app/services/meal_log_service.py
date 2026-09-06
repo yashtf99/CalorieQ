@@ -22,10 +22,66 @@ def _assert_owned(log: MealLog, user_id: str) -> None:
         raise ForbiddenError("Not your meal log")
 
 
+def _get_default_logged_at_for_meal_type(meal_type: str, reference_datetime: datetime | None = None) -> datetime:
+    """
+    Get default logged_at datetime based on meal type.
+    
+    Default times:
+    - breakfast: 9:00 AM
+    - lunch: 1:00 PM
+    - snacks: 5:00 PM
+    - dinner: 9:00 PM
+    
+    If reference_datetime is provided, use its date with the meal's default time.
+    Otherwise, use today's date with the meal's default time.
+    """
+    # Default hours for each meal type
+    MEAL_DEFAULT_HOURS = {
+        'breakfast': 9,
+        'lunch': 13,
+        'snacks': 17,
+        'dinner': 21,
+    }
+    
+    default_hour = MEAL_DEFAULT_HOURS.get(meal_type, 12)  # Fallback to noon if unknown
+    default_minute = 0
+    default_second = 0
+    default_microsecond = 0
+    
+    if reference_datetime is not None:
+        # Use the date from reference_datetime with meal's default time
+        base_date = reference_datetime.date()
+    else:
+        # Use today's date with meal's default time
+        base_date = datetime.now(timezone.utc).date()
+    
+    # Create datetime with default time for the appropriate date
+    default_dt = datetime(
+        year=base_date.year,
+        month=base_date.month,
+        day=base_date.day,
+        hour=default_hour,
+        minute=default_minute,
+        second=default_second,
+        microsecond=default_microsecond,
+        tzinfo=timezone.utc
+    )
+    
+    return default_dt
+
+
 def create_meal_log(db: Session, user_id: str, req: MealLogIn) -> MealLog:
     # Always store as naive UTC — SQLite has no timezone type.
     # Convert to UTC *before* stripping tzinfo so +05:30 offsets aren't silently treated as UTC.
-    raw_logged_at = req.logged_at or datetime.now(timezone.utc)
+    
+    # Determine logged_at: use provided value, or set default based on meal type
+    if req.logged_at is not None:
+        # An explicit logged_at was provided - use it as-is
+        raw_logged_at = req.logged_at
+    else:
+        # No logged_at provided - apply meal-specific default time based on meal type
+        raw_logged_at = _get_default_logged_at_for_meal_type(req.meal_type)
+    
     if raw_logged_at.tzinfo is not None:
         logged_at = raw_logged_at.astimezone(timezone.utc).replace(tzinfo=None)
     else:

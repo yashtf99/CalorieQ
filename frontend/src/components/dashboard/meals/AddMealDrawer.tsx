@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { format, parseISO } from 'date-fns'
 import type { MealType } from '@/types/meals'
 import type { FoodItemSearchOut } from '@/types/food'
 import { scaleMacros } from '@/types/food'
@@ -159,6 +160,26 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
     return () => observer.disconnect()
   }, [searchResults])
 
+  // Calculate logged_at based on meal type and date
+  const getMealDefaultLoggedAt = (mealType: MealType, dateStr: string): string => {
+    const MEAL_DEFAULT_HOURS: Record<MealType, number> = {
+      breakfast: 9,
+      lunch: 13,
+      snacks: 17,
+      dinner: 21,
+    }
+
+    const hour = MEAL_DEFAULT_HOURS[mealType]
+    const date = parseISO(dateStr)
+
+    // Create the datetime with the meal's default hour, in the user's timezone
+    const loggedAt = new Date(date)
+    loggedAt.setHours(hour, 0, 0, 0)
+
+    // Convert to ISO string (will include timezone offset)
+    return loggedAt.toISOString()
+  }
+
   const handleAddLinkedMeal = async () => {
     if (!selectedFood) return
     const qty = portionId && selectedFood.portions
@@ -169,6 +190,7 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
       food_item_id: selectedFood.id,
       meal_type: mealType,
       quantity_g: qty,
+      logged_at: getMealDefaultLoggedAt(mealType, date),
     })
     onOpenChange(false)
   }
@@ -183,6 +205,7 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
       carb_g: customFood.carb_g,
       fat_g: customFood.fat_g,
       source: 'user',
+      logged_at: getMealDefaultLoggedAt(mealType, date),
     })
     onOpenChange(false)
   }
