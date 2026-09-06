@@ -3,6 +3,9 @@
 *.db-shm
 *.db-wal
 
+# Generated CSVs from process_raw_data.py — can be recreated, don't commit
+backend/data/INDB-processed/
+
 */.claude/
 
 # Byte-compiled / optimized / DLL files
