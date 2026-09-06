@@ -1,5 +1,6 @@
 import { LogOut, User } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
+import logo from '@/assets/claorieQ.svg'
 import { useLogout } from '@/api/auth'
 import { cn } from '@/lib/utils'
 
@@ -16,9 +17,7 @@ export default function AppLayout() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border sticky top-0 z-50 bg-background/90 backdrop-blur-sm">
         <div className="max-w-screen-xl mx-auto px-6 h-14 flex items-center gap-8">
-          <span className="text-base font-semibold text-foreground tracking-tight shrink-0">
-            CalorieQ
-          </span>
+          <img src={logo} alt="CalorieQ" className="h-7 w-7 shrink-0" />
 
           <nav className="flex items-center gap-1 flex-1">
             {NAV_LINKS.map(({ to, label, end }) => (

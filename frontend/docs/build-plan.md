@@ -7,7 +7,7 @@
 | 1 | Project scaffold & tooling | ✅ Done |
 | 2 | Auth — login, register, protected routes | ✅ Done |
 | 3 | Layout shell + routing | ✅ Done |
-| 4 | Dashboard — data layer (API hooks, types, date store) | 🔲 Planned |
+| 4 | Dashboard — data layer (API hooks, types, date store) | ✅ Done |
 | 5 | Dashboard — calorie ring + macro bars | 🔲 Planned |
 | 6 | Dashboard — meals section | 🔲 Planned |
 | 7 | Dashboard — add meal flow | 🔲 Planned |
