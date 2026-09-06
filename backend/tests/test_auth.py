@@ -82,12 +82,13 @@ def test_login_wrong_password_returns_401(client):
     _register(client)
     r = client.post(LOGIN, json={"email": _USER["email"], "password": "wrongpassword"})
     assert r.status_code == 401
-    assert r.json()["error"]["code"] == "UNAUTHORIZED"
+    assert r.json()["error"]["code"] == "WRONG_PASSWORD"
 
 
 def test_login_unknown_email_returns_401(client):
     r = client.post(LOGIN, json={"email": "nobody@example.com", "password": "password123"})
     assert r.status_code == 401
+    assert r.json()["error"]["code"] == "USER_NOT_FOUND"
 
 
 def test_login_returns_different_tokens_each_time(client):

@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/store/authStore'
 import { apiClient } from './client'
 
+type ApiError = { response?: { data?: { error?: { code?: string; message?: string } } } }
+
 export interface LoginRequest {
   email: string
   password: string
@@ -29,9 +31,12 @@ export interface TokenResponse {
   }
 }
 
-function extractErrorMessage(error: unknown, fallback: string): string {
-  const e = error as { response?: { data?: { error?: { message?: string } } } }
-  return e?.response?.data?.error?.message ?? fallback
+function parseError(error: unknown): { code: string; message: string } {
+  const e = error as ApiError
+  return {
+    code: e?.response?.data?.error?.code ?? 'UNKNOWN',
+    message: e?.response?.data?.error?.message ?? '',
+  }
 }
 
 export function useLogin() {
@@ -46,7 +51,14 @@ export function useLogin() {
       navigate('/')
     },
     onError: (error) => {
-      toast.error(extractErrorMessage(error, 'Invalid email or password'))
+      const { code, message } = parseError(error)
+      if (code === 'USER_NOT_FOUND') {
+        toast.error(message || 'No account found with that email.', {
+          action: { label: 'Register', onClick: () => navigate('/register') },
+        })
+      } else {
+        toast.error(message || 'Incorrect password.')
+      }
     },
   })
 }
@@ -63,7 +75,8 @@ export function useRegister() {
       navigate('/')
     },
     onError: (error) => {
-      toast.error(extractErrorMessage(error, 'Registration failed. Please try again.'))
+      const { message } = parseError(error)
+      toast.error(message || 'Registration failed. Please try again.')
     },
   })
 }

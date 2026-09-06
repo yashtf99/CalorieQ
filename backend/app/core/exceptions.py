@@ -7,10 +7,10 @@ class NotFoundError(HTTPException):
 
 
 class UnauthorizedError(HTTPException):
-    def __init__(self, message: str = "Unauthorized"):
+    def __init__(self, message: str = "Unauthorized", code: str = "UNAUTHORIZED"):
         super().__init__(
             status_code=401,
-            detail={"code": "UNAUTHORIZED", "message": message},
+            detail={"code": code, "message": message},
             headers={"WWW-Authenticate": "Bearer"},
         )
 

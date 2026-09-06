@@ -55,8 +55,10 @@ def register(db: Session, req: RegisterRequest) -> tuple[User, str, str]:
 
 def login(db: Session, req: LoginRequest) -> tuple[str, str]:
     user = db.query(User).filter(User.email == req.email).first()
-    if not user or not verify_password(req.password, user.password_hash):
-        raise UnauthorizedError("Invalid email or password")
+    if not user:
+        raise UnauthorizedError("No account found with that email. Please register.", code="USER_NOT_FOUND")
+    if not verify_password(req.password, user.password_hash):
+        raise UnauthorizedError("Incorrect password.", code="WRONG_PASSWORD")
 
     return _issue_tokens(db, user.id)
 
