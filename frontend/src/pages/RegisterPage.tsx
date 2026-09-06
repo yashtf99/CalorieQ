@@ -24,9 +24,6 @@ export default function RegisterPage() {
 
   const onSubmit = (data: FormValues) => register_.mutate(data)
 
-  const serverError = register_.error as { response?: { data?: { error?: { message?: string } } } } | null
-  const serverMessage = serverError?.response?.data?.error?.message
-
   return (
     <div className="bg-card border border-border rounded-xl p-8 space-y-6">
       <div>
@@ -77,10 +74,6 @@ export default function RegisterPage() {
             <p className="text-xs text-destructive">{errors.password.message}</p>
           )}
         </div>
-
-        {serverMessage && (
-          <p className="text-xs text-destructive">{serverMessage}</p>
-        )}
 
         <Button type="submit" className="w-full" disabled={register_.isPending}>
           {register_.isPending ? 'Creating account…' : 'Create account'}

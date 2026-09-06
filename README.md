@@ -3,6 +3,43 @@ The Personal Calorie Tracker is a full-stack application designed to help users 
 and understand their daily nutritional intake. Users can log meals across breakfast, lunch, and
 dinner, set personalized health goals, and visualize macro and micronutrient trends over time.
 
+## Dev Setup
+
+### Start servers
+
+Open two terminals and run one command each:
+
+```bash
+# Terminal 1 — backend (http://localhost:8000)
+cd backend && bash start.sh
+
+# Terminal 2 — frontend (http://localhost:5173)
+cd frontend && bash start.sh
+```
+
+Logs are written to `backend/logs/backend.log` and `frontend/logs/frontend.log`.  
+Follow live: `tail -f backend/logs/backend.log`
+
+### Kill processes
+
+**Git Bash:**
+```bash
+taskkill //F //IM uvicorn.exe; taskkill //F //IM node.exe; taskkill //F //IM python.exe
+```
+
+**PowerShell:**
+```powershell
+taskkill /F /IM uvicorn.exe; taskkill /F /IM node.exe; taskkill /F /IM python.exe
+```
+
+**Kill by port (PowerShell):**
+```powershell
+netstat -ano | findstr :8000   # find PID
+taskkill /F /PID <pid>
+```
+
+---
+
 ## Functional Requirements (directly from Stakeholders)
 
 - Multi-User Support: Support multiple independent users who can sign up, log in, and

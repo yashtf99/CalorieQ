@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useAuthStore } from '@/store/authStore'
 import { apiClient } from './client'
 
@@ -28,6 +29,11 @@ export interface TokenResponse {
   }
 }
 
+function extractErrorMessage(error: unknown, fallback: string): string {
+  const e = error as { response?: { data?: { error?: { message?: string } } } }
+  return e?.response?.data?.error?.message ?? fallback
+}
+
 export function useLogin() {
   const { setTokens } = useAuthStore()
   const navigate = useNavigate()
@@ -38,6 +44,9 @@ export function useLogin() {
     onSuccess: (data) => {
       setTokens(data.access_token, data.refresh_token)
       navigate('/')
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error, 'Invalid email or password'))
     },
   })
 }
@@ -52,6 +61,9 @@ export function useRegister() {
     onSuccess: (data) => {
       setTokens(data.access_token, data.refresh_token, data.user)
       navigate('/')
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error, 'Registration failed. Please try again.'))
     },
   })
 }

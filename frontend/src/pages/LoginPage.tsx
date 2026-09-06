@@ -61,12 +61,6 @@ export default function LoginPage() {
           )}
         </div>
 
-        {login.error && (
-          <p className="text-xs text-destructive">
-            Invalid email or password
-          </p>
-        )}
-
         <Button type="submit" className="w-full" disabled={login.isPending}>
           {login.isPending ? 'Signing in…' : 'Sign in'}
         </Button>
