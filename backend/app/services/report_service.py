@@ -214,7 +214,7 @@ def get_weekly_report(
     else:
         period_avg = {"energy_kcal": 0.0, "protein_g": 0.0, "carb_g": 0.0, "fat_g": 0.0, "fibre_g": 0.0}
 
-    goal = _goal_for_period(db, user_id, start_d, end_d, user_tz)
+    goal = _active_goal(db, user_id)
 
     weight_logs = db.query(WeightLog).filter(
         WeightLog.user_id == user_id,

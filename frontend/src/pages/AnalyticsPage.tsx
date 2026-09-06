@@ -65,11 +65,11 @@ export default function AnalyticsPage() {
     const daysWithLogs = filteredReport.data.filter(d => d.energy_kcal > 0).length
     const avgKcal = Math.round(
       filteredReport.data.reduce((sum, d) => sum + d.energy_kcal, 0) /
-      (filteredReport.data.length || 1)
+      (daysWithLogs || 1)
     )
     const avgProtein = (
       filteredReport.data.reduce((sum, d) => sum + d.protein_g, 0) /
-      (filteredReport.data.length || 1)
+      (daysWithLogs || 1)
     ).toFixed(1)
 
     return (

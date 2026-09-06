@@ -1,5 +1,6 @@
 import type { WeeklyReportOut } from '@/types/reports'
 import { format, parseISO } from 'date-fns'
+import { useActiveGoal } from '@/api/goals'
 
 interface Props {
   report: WeeklyReportOut | null
@@ -13,8 +14,7 @@ interface MacroBarProps {
 }
 
 function MacroBar({ label, value, color, goalValue }: MacroBarProps) {
-  const maxValue = goalValue || 50
-  const pct = Math.min((value / maxValue) * 100, 100)
+  const pct = goalValue ? Math.min((value / goalValue) * 100, 100) : 0
 
   return (
     <div className="flex items-center gap-1.5">
@@ -33,6 +33,8 @@ function MacroBar({ label, value, color, goalValue }: MacroBarProps) {
 const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export default function ThisWeekView({ report }: Props) {
+  const { data: activeGoal } = useActiveGoal()
+
   if (!report) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -41,16 +43,18 @@ export default function ThisWeekView({ report }: Props) {
     )
   }
 
+  const effectiveGoal = report.goal || activeGoal
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2">
         {report.data.map((day, index) => {
           const hasData = day.energy_kcal > 0
-          const onTarget = report.goal?.daily_calories
-            ? day.energy_kcal <= report.goal.daily_calories
-            : true
-          const borderColor = !hasData ? 'border-border' : onTarget ? 'border-primary' : 'border-destructive'
-          const bgColor = !hasData ? 'bg-muted/30' : onTarget ? 'bg-primary/5' : 'bg-destructive/5'
+          const caloriesMet = effectiveGoal?.daily_calories
+            ? day.energy_kcal >= effectiveGoal.daily_calories
+            : false
+          const borderColor = caloriesMet ? 'border-primary' : 'border-border'
+          const bgColor = caloriesMet ? 'bg-primary/5' : 'bg-muted/30'
 
           return (
             <div
@@ -73,9 +77,9 @@ export default function ThisWeekView({ report }: Props) {
 
               {/* Macros with bars */}
               <div className="w-full space-y-1.5">
-                <MacroBar label="P" value={day.protein_g} color="oklch(0.65 0.18 230)" goalValue={report.goal?.protein_g} />
-                <MacroBar label="C" value={day.carb_g} color="oklch(0.78 0.18 80)" goalValue={report.goal?.carbs_g} />
-                <MacroBar label="F" value={day.fat_g} color="oklch(0.68 0.20 20)" goalValue={report.goal?.fat_g} />
+                <MacroBar label="P" value={day.protein_g} color="oklch(0.65 0.18 230)" goalValue={effectiveGoal?.protein_g} />
+                <MacroBar label="C" value={day.carb_g} color="oklch(0.78 0.18 80)" goalValue={effectiveGoal?.carbs_g} />
+                <MacroBar label="F" value={day.fat_g} color="oklch(0.68 0.20 20)" goalValue={effectiveGoal?.fat_g} />
               </div>
 
               {/* Status indicator */}
@@ -83,10 +87,10 @@ export default function ThisWeekView({ report }: Props) {
                 <div className="w-full">
                   <div className="h-0.5 rounded-full bg-border overflow-hidden">
                     <div
-                      className={`h-full transition-all ${onTarget ? 'bg-primary' : 'bg-destructive'}`}
+                      className={`h-full transition-all ${caloriesMet ? 'bg-primary' : 'bg-muted'}`}
                       style={{
-                        width: report.goal?.daily_calories
-                          ? `${Math.min((day.energy_kcal / report.goal.daily_calories) * 100, 100)}%`
+                        width: effectiveGoal?.daily_calories
+                          ? `${Math.min((day.energy_kcal / effectiveGoal.daily_calories) * 100, 100)}%`
                           : '100%',
                       }}
                     />
