@@ -1,7 +1,16 @@
 GOALS         = "/api/v1/goals"
 GOALS_ACTIVE  = "/api/v1/goals/active"
 GOALS_HISTORY = "/api/v1/goals/history"
+GOALS_SUGGEST = "/api/v1/goals/suggest"
 REGISTER      = "/api/v1/auth/register"
+
+_SUGGEST_PARAMS = {
+    "height_cm":      175.0,
+    "weight_kg":      75.0,
+    "dob":            "1995-06-15",
+    "gender":         "male",
+    "activity_level": "lightly_active",
+}
 
 _GOAL = {
     "goal_type": "lose",
@@ -12,6 +21,62 @@ _GOAL = {
     "fibre_g": 30.0,
     "weight_target_kg": 72.0,
 }
+
+
+# ── GET /goals/suggest ───────────────────────────────────────────────────────
+
+def test_suggest_returns_bmr_tdee_and_three_goal_types(client, token_headers):
+    r = client.get(GOALS_SUGGEST, params=_SUGGEST_PARAMS, headers=token_headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert "bmr" in body and body["bmr"] > 0
+    assert "tdee" in body and body["tdee"] >= body["bmr"]
+    assert set(body["suggestions"].keys()) == {"lose", "maintain", "gain"}
+
+
+def test_suggest_lose_calories_less_than_maintain(client, token_headers):
+    r = client.get(GOALS_SUGGEST, params=_SUGGEST_PARAMS, headers=token_headers).json()
+    assert r["suggestions"]["lose"]["daily_calories"] < r["suggestions"]["maintain"]["daily_calories"]
+
+
+def test_suggest_gain_calories_more_than_maintain(client, token_headers):
+    r = client.get(GOALS_SUGGEST, params=_SUGGEST_PARAMS, headers=token_headers).json()
+    assert r["suggestions"]["gain"]["daily_calories"] > r["suggestions"]["maintain"]["daily_calories"]
+
+
+def test_suggest_each_suggestion_has_all_macro_fields(client, token_headers):
+    r = client.get(GOALS_SUGGEST, params=_SUGGEST_PARAMS, headers=token_headers).json()
+    for goal_type in ("lose", "maintain", "gain"):
+        s = r["suggestions"][goal_type]
+        for field in ("daily_calories", "protein_g", "carbs_g", "fat_g", "fibre_g"):
+            assert field in s and s[field] > 0
+
+
+def test_suggest_requires_auth(client):
+    r = client.get(GOALS_SUGGEST, params=_SUGGEST_PARAMS)
+    assert r.status_code == 401
+
+
+def test_suggest_rejects_future_dob(client, token_headers):
+    r = client.get(GOALS_SUGGEST, params={**_SUGGEST_PARAMS, "dob": "2099-01-01"}, headers=token_headers)
+    assert r.status_code == 422
+
+
+def test_suggest_rejects_invalid_activity_level(client, token_headers):
+    r = client.get(GOALS_SUGGEST, params={**_SUGGEST_PARAMS, "activity_level": "superhuman"}, headers=token_headers)
+    assert r.status_code == 400
+
+
+def test_suggest_rejects_out_of_range_weight(client, token_headers):
+    r = client.get(GOALS_SUGGEST, params={**_SUGGEST_PARAMS, "weight_kg": 600}, headers=token_headers)
+    assert r.status_code == 400
+
+
+def test_suggest_lose_never_below_1200_kcal(client, token_headers):
+    # Very small/light person — lose suggestion should still be >= 1200
+    params = {**_SUGGEST_PARAMS, "weight_kg": 21, "height_cm": 51, "activity_level": "sedentary"}
+    r = client.get(GOALS_SUGGEST, params=params, headers=token_headers).json()
+    assert r["suggestions"]["lose"]["daily_calories"] >= 1200
 
 
 # ── POST /goals ───────────────────────────────────────────────────────────────

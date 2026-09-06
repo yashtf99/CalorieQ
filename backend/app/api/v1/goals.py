@@ -5,10 +5,23 @@ from app.api.deps import get_current_user
 from app.models.user import User
 from app.orm.session import get_db
 from app.schemas.common import PaginatedResponse, make_paginated
-from app.schemas.goal import GoalIn, GoalOut
+from app.schemas.goal import GoalIn, GoalOut, GoalSuggestionOut, GoalSuggestionParams
 from app.services import goal_service
 
 router = APIRouter(prefix="/goals", tags=["goals"])
+
+
+@router.get("/suggest", response_model=GoalSuggestionOut)
+def suggest_goals(
+    params: GoalSuggestionParams = Depends(),
+    _: User = Depends(get_current_user),   # auth required — endpoint is per-user context
+):
+    """
+    Returns BMR, TDEE, and suggested macro targets for all three goal types.
+    Called during onboarding (step 2 → step 3) and from the Profile page.
+    All inputs are explicit query params so this works before profile data is saved.
+    """
+    return goal_service.suggest_goals(params)
 
 
 @router.post("", response_model=GoalOut, status_code=201)
