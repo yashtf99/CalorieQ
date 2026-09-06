@@ -1,6 +1,6 @@
 import { X, Upload, Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 import type { MealType } from '@/types/meals'
 import type { FoodItemSearchOut } from '@/types/food'
 import { scaleMacros } from '@/types/food'
@@ -266,12 +266,27 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
       protein_g: imageData.protein_g,
       carb_g: imageData.carb_g,
       fat_g: imageData.fat_g,
-      fibre_g: imageData.fibre_g,
-      sodium_mg: imageData.sodium_mg,
+      ...(imageData.fibre_g !== undefined && { fibre_g: imageData.fibre_g }),
+      ...(imageData.sodium_mg !== undefined && { sodium_mg: imageData.sodium_mg }),
       source: 'ai',
       logged_at: getMealDefaultLoggedAt(mealType, date),
     })
     onOpenChange(false)
+  }
+
+  const scaleImageDataByQuantity = (baseData: ImageExtractionResult, quantityGrams: number) => {
+    if (!baseData.quantity_g) return baseData
+    const scale = quantityGrams / baseData.quantity_g
+    return {
+      ...baseData,
+      quantity_g: quantityGrams,
+      energy_kcal: baseData.energy_kcal ? Math.round(baseData.energy_kcal * scale * 10) / 10 : undefined,
+      protein_g: baseData.protein_g ? Math.round(baseData.protein_g * scale * 10) / 10 : undefined,
+      carb_g: baseData.carb_g ? Math.round(baseData.carb_g * scale * 10) / 10 : undefined,
+      fat_g: baseData.fat_g ? Math.round(baseData.fat_g * scale * 10) / 10 : undefined,
+      fibre_g: baseData.fibre_g ? Math.round(baseData.fibre_g * scale * 10) / 10 : undefined,
+      sodium_mg: baseData.sodium_mg ? Math.round(baseData.sodium_mg * scale * 10) / 10 : undefined,
+    }
   }
 
   const mealTypeOptions: MealType[] = ['breakfast', 'lunch', 'snacks', 'dinner']
@@ -489,11 +504,11 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
                 {!imageData.is_nutrition_label && imageData.food_item_name && (
                   <p className="text-sm text-foreground">{imageData.food_item_name}</p>
                 )}
-                {!imageData.is_nutrition_label && imageData.confidence && (
+                {/* {!imageData.is_nutrition_label && imageData.confidence && (
                   <p className="text-xs text-muted-foreground mt-1">
                     Confidence: {imageData.confidence}
                   </p>
-                )}
+                )} */}
                 {!imageData.is_nutrition_label && imageData.estimation_basis && (
                   <p className="text-xs text-muted-foreground mt-1">
                     {imageData.estimation_basis}
@@ -507,46 +522,112 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
                   type="number"
                   min="1"
                   value={quantity}
-                  onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const newQty = parseFloat(e.target.value) || 0
+                    setQuantity(newQty)
+                    // Scale macros proportionally
+                    if (imageData && imageData.quantity_g) {
+                      const scaled = scaleImageDataByQuantity(imageData, newQty)
+                      setImageData(scaled)
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-border rounded"
                 />
               </div>
 
-              {(imageData.energy_kcal !== undefined ||
-                imageData.protein_g !== undefined ||
-                imageData.carb_g !== undefined ||
-                imageData.fat_g !== undefined) && (
-                <div className="bg-muted p-4 rounded-lg">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">
+              {imageData.energy_kcal !== undefined && (
+                <div className="bg-muted p-4 rounded-lg space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">
                     Extracted Nutrition (editable)
                   </p>
                   <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { key: 'energy_kcal', label: 'Calories (kcal)', value: imageData.energy_kcal },
-                      { key: 'protein_g', label: 'Protein (g)', value: imageData.protein_g },
-                      { key: 'carb_g', label: 'Carbs (g)', value: imageData.carb_g },
-                      { key: 'fat_g', label: 'Fat (g)', value: imageData.fat_g },
-                    ].map(({ key, label, value }) =>
-                      value !== undefined ? (
-                        <div key={key}>
-                          <label className="block text-xs font-medium mb-1">{label}</label>
-                          <input
-                            type="number"
-                            value={value}
-                            onChange={(e) =>
-                              setImageData((p) =>
-                                p
-                                  ? {
-                                      ...p,
-                                      [key]: parseFloat(e.target.value) || 0,
-                                    }
-                                  : null
-                              )
-                            }
-                            className="w-full px-2 py-1 border border-border rounded text-sm"
-                          />
-                        </div>
-                      ) : null
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Calories (kcal) *</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={imageData.energy_kcal || ''}
+                        onChange={(e) =>
+                          setImageData((p) =>
+                            p ? { ...p, energy_kcal: parseFloat(e.target.value) || 0 } : null
+                          )
+                        }
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Protein (g)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={imageData.protein_g || ''}
+                        onChange={(e) =>
+                          setImageData((p) =>
+                            p ? { ...p, protein_g: parseFloat(e.target.value) || 0 } : null
+                          )
+                        }
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Carbs (g)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={imageData.carb_g || ''}
+                        onChange={(e) =>
+                          setImageData((p) =>
+                            p ? { ...p, carb_g: parseFloat(e.target.value) || 0 } : null
+                          )
+                        }
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Fat (g)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={imageData.fat_g || ''}
+                        onChange={(e) =>
+                          setImageData((p) =>
+                            p ? { ...p, fat_g: parseFloat(e.target.value) || 0 } : null
+                          )
+                        }
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    </div>
+                    {imageData.fibre_g !== undefined && (
+                      <div>
+                        <label className="block text-xs font-medium mb-1">Fibre (g)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={imageData.fibre_g || ''}
+                          onChange={(e) =>
+                            setImageData((p) =>
+                              p ? { ...p, fibre_g: parseFloat(e.target.value) || 0 } : null
+                            )
+                          }
+                          className="w-full px-2 py-1 border border-border rounded text-sm"
+                        />
+                      </div>
+                    )}
+                    {imageData.sodium_mg !== undefined && (
+                      <div>
+                        <label className="block text-xs font-medium mb-1">Sodium (mg)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={imageData.sodium_mg || ''}
+                          onChange={(e) =>
+                            setImageData((p) =>
+                              p ? { ...p, sodium_mg: parseFloat(e.target.value) || 0 } : null
+                            )
+                          }
+                          className="w-full px-2 py-1 border border-border rounded text-sm"
+                        />
+                      </div>
                     )}
                   </div>
                 </div>

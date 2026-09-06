@@ -35,6 +35,8 @@ export interface AddMealFreeformIn {
   protein_g?: number
   carb_g?: number
   fat_g?: number
+  fibre_g?: number
+  sodium_mg?: number
   source?: 'user' | 'ai'
 }
 

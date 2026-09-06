@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
 
@@ -16,9 +17,16 @@ export interface ImageExtractionResult {
   estimation_basis?: string
 }
 
+const SUPPORTED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg', 'image/bmp', 'image/tiff', 'image/webp']
+
 export function useExtractImage() {
   return useMutation({
     mutationFn: async (file: File) => {
+      // Validate file format
+      if (!SUPPORTED_FORMATS.includes(file.type)) {
+        throw new Error(`Unsupported image format: ${file.type || 'unknown'}. Please use JPEG, PNG, BMP, TIFF, or WebP.`)
+      }
+
       const formData = new FormData()
       formData.append('file', file)
 
@@ -34,6 +42,10 @@ export function useExtractImage() {
         }
       )
       return response.data
+    },
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Failed to extract nutrition from image'
+      toast.error(message)
     },
   })
 }
