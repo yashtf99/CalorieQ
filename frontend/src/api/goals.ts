@@ -1,8 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import type { GoalIn, GoalOut } from '@/types/goals'
+import type { GoalIn, GoalOut, GoalSuggestionParams, GoalSuggestionOut } from '@/types/goals'
 import type { PaginatedResponse } from '@/types/common'
 import { apiClient } from './client'
+
+export function useGoalSuggestion(params: GoalSuggestionParams | null) {
+  return useQuery({
+    queryKey: ['goal-suggestion', params],
+    queryFn: () =>
+      apiClient
+        .get<GoalSuggestionOut>('/goals/suggest', { params: params! })
+        .then((r) => r.data),
+    enabled: params !== null,
+    staleTime: 5 * 60_000,  // suggestions don't change within a session
+  })
+}
 
 export function useActiveGoal() {
   return useQuery({

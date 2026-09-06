@@ -1,4 +1,28 @@
 export type GoalType = 'lose' | 'maintain' | 'gain'
+export type ActivityLevel = 'sedentary' | 'lightly_active' | 'active' | 'very_active'
+export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say'
+
+export interface GoalSuggestionParams {
+  height_cm: number
+  weight_kg: number
+  dob: string           // YYYY-MM-DD
+  gender: Gender
+  activity_level: ActivityLevel
+}
+
+export interface MacroSuggestion {
+  daily_calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  fibre_g: number
+}
+
+export interface GoalSuggestionOut {
+  bmr: number
+  tdee: number
+  suggestions: Record<GoalType, MacroSuggestion>
+}
 
 export interface GoalOut {
   id: string
