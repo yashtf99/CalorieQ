@@ -11,6 +11,7 @@ standard balanced split vs high-protein vs low-carb (keto-style).
 from abc import ABC, abstractmethod
 
 from app.schemas.goal import MacroSuggestion
+from app.utils.rounding import nice_calories, nice_macro
 
 MIN_LOSE_KCAL   = 1_200   # hard floor for safety
 CALORIE_DEFICIT = 500     # kcal below TDEE for lose
@@ -49,22 +50,22 @@ class StandardMacroStrategy(MacroStrategy):
 
     def calories_for(self, tdee: int, goal_type: str) -> int:
         if goal_type == "lose":
-            return max(MIN_LOSE_KCAL, tdee - CALORIE_DEFICIT)
+            return nice_calories(max(MIN_LOSE_KCAL, tdee - CALORIE_DEFICIT))
         if goal_type == "gain":
-            return tdee + CALORIE_SURPLUS
-        return tdee
+            return nice_calories(tdee + CALORIE_SURPLUS)
+        return nice_calories(tdee)
 
     def macros_for(self, calories: int, weight_kg: float, goal_type: str) -> MacroSuggestion:
-        protein_g = round(weight_kg * (2.2 if goal_type == "gain" else 1.8))
-        fat_g     = round(weight_kg * 0.9)
+        protein_g = nice_macro(round(weight_kg * (2.2 if goal_type == "gain" else 1.8)))
+        fat_g     = nice_macro(round(weight_kg * 0.9))
         remaining = calories - protein_g * 4 - fat_g * 9
-        carbs_g   = max(50, round(remaining / 4))
+        carbs_g   = nice_macro(max(50, round(remaining / 4)))
         return MacroSuggestion(
             daily_calories=calories,
             protein_g=protein_g,
             carbs_g=carbs_g,
             fat_g=fat_g,
-            fibre_g=_fibre(calories),
+            fibre_g=nice_macro(_fibre(calories)),
         )
 
 
@@ -78,22 +79,22 @@ class HighProteinMacroStrategy(MacroStrategy):
 
     def calories_for(self, tdee: int, goal_type: str) -> int:
         if goal_type == "lose":
-            return max(MIN_LOSE_KCAL, tdee - CALORIE_DEFICIT)
+            return nice_calories(max(MIN_LOSE_KCAL, tdee - CALORIE_DEFICIT))
         if goal_type == "gain":
-            return tdee + CALORIE_SURPLUS
-        return tdee
+            return nice_calories(tdee + CALORIE_SURPLUS)
+        return nice_calories(tdee)
 
     def macros_for(self, calories: int, weight_kg: float, goal_type: str) -> MacroSuggestion:
-        protein_g = round(weight_kg * (3.0 if goal_type == "gain" else 2.5))
-        fat_g     = round(weight_kg * 0.8)
+        protein_g = nice_macro(round(weight_kg * (3.0 if goal_type == "gain" else 2.5)))
+        fat_g     = nice_macro(round(weight_kg * 0.8))
         remaining = calories - protein_g * 4 - fat_g * 9
-        carbs_g   = max(30, round(remaining / 4))
+        carbs_g   = nice_macro(max(30, round(remaining / 4)))
         return MacroSuggestion(
             daily_calories=calories,
             protein_g=protein_g,
             carbs_g=carbs_g,
             fat_g=fat_g,
-            fibre_g=_fibre(calories),
+            fibre_g=nice_macro(_fibre(calories)),
         )
 
 
@@ -107,22 +108,22 @@ class LowCarbMacroStrategy(MacroStrategy):
 
     def calories_for(self, tdee: int, goal_type: str) -> int:
         if goal_type == "lose":
-            return max(MIN_LOSE_KCAL, tdee - CALORIE_DEFICIT)
+            return nice_calories(max(MIN_LOSE_KCAL, tdee - CALORIE_DEFICIT))
         if goal_type == "gain":
-            return tdee + CALORIE_SURPLUS
-        return tdee
+            return nice_calories(tdee + CALORIE_SURPLUS)
+        return nice_calories(tdee)
 
     def macros_for(self, calories: int, weight_kg: float, goal_type: str) -> MacroSuggestion:
-        protein_g = round(weight_kg * 2.0)
+        protein_g = nice_macro(round(weight_kg * 2.0))
         carbs_g   = 100
         remaining = calories - protein_g * 4 - carbs_g * 4
-        fat_g     = max(30, round(remaining / 9))
+        fat_g     = nice_macro(max(30, round(remaining / 9)))
         return MacroSuggestion(
             daily_calories=calories,
             protein_g=protein_g,
             carbs_g=carbs_g,
             fat_g=fat_g,
-            fibre_g=_fibre(calories),
+            fibre_g=nice_macro(_fibre(calories)),
         )
 
 

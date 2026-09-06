@@ -9,6 +9,7 @@ from app.models.goal import Goal
 from app.schemas.goal import GoalIn, GoalSuggestionOut, GoalSuggestionParams
 from app.services.strategies.bmr import BMRStrategy, DEFAULT_BMR_STRATEGY
 from app.services.strategies.macro import MacroStrategy, DEFAULT_MACRO_STRATEGY
+from app.utils.rounding import nice_calories
 
 
 def _age(dob: str) -> int:
@@ -33,8 +34,8 @@ def suggest_goals(
         raise UnprocessableError("dob must be in the past")
 
     age  = _age(params.dob)
-    bmr  = bmr_strategy.calculate(params.weight_kg, params.height_cm, age, params.gender)
-    tdee = bmr_strategy.tdee(bmr, params.activity_level)
+    bmr  = nice_calories(bmr_strategy.calculate(params.weight_kg, params.height_cm, age, params.gender))
+    tdee = nice_calories(bmr_strategy.tdee(bmr, params.activity_level))
 
     suggestions = {
         goal_type: macro_strategy.suggest(tdee, params.weight_kg, goal_type)
