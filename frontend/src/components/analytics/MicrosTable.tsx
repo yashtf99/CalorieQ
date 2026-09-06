@@ -27,7 +27,7 @@ export default function MicrosTable({ report }: Props) {
           <thead>
             <tr className="border-b border-border">
               <th className="text-left py-2 px-2 font-medium">Nutrient</th>
-              <th className="text-right py-2 px-2 font-medium">Total</th>
+              <th className="text-right py-2 px-2 font-medium">Average</th>
             </tr>
           </thead>
           <tbody>

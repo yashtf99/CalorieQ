@@ -127,6 +127,11 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
 
   useEffect(() => {
     setMealType(initialMealType ?? 'lunch')
+    // Reset to search view when opening or when meal type changes
+    setView('search')
+    setSearchQuery('')
+    setSelectedFood(null)
+    setActiveCategory(undefined)
   }, [initialMealType, open])
 
   useEffect(() => {

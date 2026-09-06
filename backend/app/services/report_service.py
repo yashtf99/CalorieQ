@@ -257,6 +257,8 @@ def get_micros_report(
     )
 
     totals: dict[str, float] = {}
+    meal_count = len(pairs)
+    
     for log, food in pairs:
         factor = float(log.quantity_g) / 100
         for col in MICRO_COLUMNS:
@@ -264,9 +266,18 @@ def get_micros_report(
             if val is not None:
                 totals[col] = round(totals.get(col, 0.0) + float(val) * factor, 4)
 
+    # Calculate averages per meal
+    averages = {}
+    if meal_count > 0:
+        for col in MICRO_COLUMNS:
+            avg = totals.get(col, 0.0) / meal_count
+            averages[col] = round(avg, 4)
+    else:
+        averages = {col: 0.0 for col in MICRO_COLUMNS}
+
     return {
         "start": start_d.isoformat(),
         "end": end_d.isoformat(),
         "note": "Free-form entries without a linked food item are excluded — micro data requires a food item reference.",
-        "totals": {col: totals.get(col) for col in MICRO_COLUMNS},
+        "averages": averages,
     }

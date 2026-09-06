@@ -18,7 +18,7 @@ const mealMeta: Record<MealType, { emoji: string; label: string }> = {
 }
 
 export default function MealTypeRow({ type, entries, date, onAdd }: Props) {
-  const [isExpanded, setIsExpanded] = useState(entries.length === 0)
+  const [isExpanded, setIsExpanded] = useState(false)
   const meta = mealMeta[type]
   const totalKcal = entries.reduce((sum, e) => sum + (e.energy_kcal ?? 0), 0)
 

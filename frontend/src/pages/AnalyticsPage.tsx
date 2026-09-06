@@ -5,9 +5,10 @@ import { useWeeklyReportRange, useMicrosReport } from '@/api/reports'
 import TimeRangeSelector from '@/components/analytics/TimeRangeSelector'
 import ThisWeekView from '@/components/analytics/ThisWeekView'
 import CaloriesTrendChart from '@/components/analytics/CaloriesTrendChart'
-import MacroStackedChart from '@/components/analytics/MacroStackedChart'
-import MacroDonutChart from '@/components/analytics/MacroDonutChart'
 import MicrosTable from '@/components/analytics/MicrosTable'
+import MacroProteinChart from '@/components/analytics/macro/MacroProteinChart'
+import MacroCarbsChart from '@/components/analytics/macro/MacroCarbsChart'
+import MacroFatChart from '@/components/analytics/macro/MacroFatChart'
 
 type Tab = 'overview' | 'calories' | 'macros' | 'nutrition'
 
@@ -191,9 +192,10 @@ export default function AnalyticsPage() {
             )}
 
             {activeTab === 'macros' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <MacroStackedChart data={[filteredReport]} />
-                <MacroDonutChart macros={filteredReport.actual_period_avg} />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <MacroProteinChart data={[filteredReport]} />
+                <MacroCarbsChart data={[filteredReport]} />
+                <MacroFatChart data={[filteredReport]} />
               </div>
             )}
 

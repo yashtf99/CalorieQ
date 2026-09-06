@@ -61,22 +61,7 @@ export default function MealsSection({ date }: Props) {
         </div>
 
         <div>
-          {totalMeals === 0 ? (
-            <div className="px-4 py-8">
-              <EmptyState
-                title="No meals logged"
-                description="Start tracking your nutrition by adding your first meal"
-                action={{
-                  label: '+ Add meal',
-                  onClick: () => {
-                    setInitialMealType(null)
-                    setIsDrawerOpen(true)
-                  },
-                }}
-              />
-            </div>
-          ) : (
-            (Object.keys(grouped) as MealType[]).map((type) => (
+          {(Object.keys(grouped) as MealType[]).map((type) => (
               <MealTypeRow
                 key={type}
                 type={type}
@@ -84,8 +69,7 @@ export default function MealsSection({ date }: Props) {
                 date={date}
                 onAdd={handleAddMeal}
               />
-            ))
-          )}
+            ))}
         </div>
       </div>
 
