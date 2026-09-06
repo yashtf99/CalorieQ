@@ -27,6 +27,7 @@ openpyxl>=3.1
 # Utilities
 python-dotenv==1.2.1
 pytz>=2024.1
+python-multipart==0.0.23
 
 # OCR
 opencv-python-headless>=4.8

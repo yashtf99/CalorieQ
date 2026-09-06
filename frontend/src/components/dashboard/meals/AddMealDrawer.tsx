@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { X, Upload, Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import type { MealType } from '@/types/meals'
@@ -6,6 +6,7 @@ import type { FoodItemSearchOut } from '@/types/food'
 import { scaleMacros } from '@/types/food'
 import { useFoodSearchInfinite, useFoodCategories, useRecentFoods } from '@/api/food'
 import { useAddMeal } from '@/api/meals'
+import { useExtractImage, type ImageExtractionResult } from '@/api/ai'
 
 interface Props {
   open: boolean
@@ -14,7 +15,7 @@ interface Props {
   date: string
 }
 
-type View = 'search' | 'detail' | 'custom'
+type View = 'search' | 'detail' | 'custom' | 'image' | 'image-detail'
 
 function QuantitySelector({
   portions,
@@ -114,6 +115,8 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
   const [quantity, setQuantity] = useState(100)
   const [portionId, setPortionId] = useState<string>()
   const [multiplier, setMultiplier] = useState(1)
+  const [imageData, setImageData] = useState<ImageExtractionResult | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [customFood, setCustomFood] = useState({
     name: '',
     quantity_g: 100,
@@ -124,6 +127,7 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
   })
 
   const debounceTimeout = useRef<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setMealType(initialMealType ?? 'lunch')
@@ -132,6 +136,8 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
     setSearchQuery('')
     setSelectedFood(null)
     setActiveCategory(undefined)
+    setImageData(null)
+    setImagePreview(null)
   }, [initialMealType, open])
 
   useEffect(() => {
@@ -148,6 +154,7 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
   const categories = useFoodCategories(debouncedQ, view === 'search' && debouncedQ.length > 0)
   const recentFoods = useRecentFoods(5)
   const addMeal = useAddMeal(date)
+  const extractImage = useExtractImage()
 
   const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -223,6 +230,48 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
       carb_g: kcal * 0.45 / 4,
       fat_g: kcal * 0.30 / 9,
     }))
+  }
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      setImagePreview(event.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+
+    // Extract nutrition
+    await extractImage.mutateAsync(file, {
+      onSuccess: (data) => {
+        setImageData(data)
+        setView('image-detail')
+        // Pre-fill quantity if available
+        if (data.quantity_g) {
+          setQuantity(data.quantity_g)
+        }
+      },
+    })
+  }
+
+  const handleImageConfirm = async () => {
+    if (!imageData) return
+    await addMeal.mutateAsync({
+      food_name_snapshot: imageData.food_item_name || 'From Image',
+      meal_type: mealType,
+      quantity_g: quantity,
+      energy_kcal: imageData.energy_kcal || 0,
+      protein_g: imageData.protein_g,
+      carb_g: imageData.carb_g,
+      fat_g: imageData.fat_g,
+      fibre_g: imageData.fibre_g,
+      sodium_mg: imageData.sodium_mg,
+      source: 'ai',
+      logged_at: getMealDefaultLoggedAt(mealType, date),
+    })
+    onOpenChange(false)
   }
 
   const mealTypeOptions: MealType[] = ['breakfast', 'lunch', 'snacks', 'dinner']
@@ -385,6 +434,126 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
             </div>
           )}
 
+          {view === 'image' && (
+            <div className="space-y-4 flex flex-col items-center justify-center py-12">
+              <div className="relative">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={extractImage.isPending}
+                  className="flex flex-col items-center gap-3 px-8 py-12 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-muted/50 transition-colors disabled:opacity-50"
+                >
+                  {extractImage.isPending ? (
+                    <>
+                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Processing image...</p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 text-muted-foreground" />
+                      <div className="text-center">
+                        <p className="text-sm font-medium">Click to upload</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Nutrition label or food photo
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {view === 'image-detail' && imageData && (
+            <div className="space-y-4">
+              {imagePreview && (
+                <div className="rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={imagePreview}
+                    alt="Uploaded food"
+                    className="w-full h-48 object-cover"
+                  />
+                </div>
+              )}
+
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                  {imageData.is_nutrition_label ? 'Nutrition Label' : 'Food Item'}
+                </p>
+                {!imageData.is_nutrition_label && imageData.food_item_name && (
+                  <p className="text-sm text-foreground">{imageData.food_item_name}</p>
+                )}
+                {!imageData.is_nutrition_label && imageData.confidence && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Confidence: {imageData.confidence}
+                  </p>
+                )}
+                {!imageData.is_nutrition_label && imageData.estimation_basis && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {imageData.estimation_basis}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Quantity (g)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-border rounded"
+                />
+              </div>
+
+              {(imageData.energy_kcal !== undefined ||
+                imageData.protein_g !== undefined ||
+                imageData.carb_g !== undefined ||
+                imageData.fat_g !== undefined) && (
+                <div className="bg-muted p-4 rounded-lg">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">
+                    Extracted Nutrition (editable)
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { key: 'energy_kcal', label: 'Calories (kcal)', value: imageData.energy_kcal },
+                      { key: 'protein_g', label: 'Protein (g)', value: imageData.protein_g },
+                      { key: 'carb_g', label: 'Carbs (g)', value: imageData.carb_g },
+                      { key: 'fat_g', label: 'Fat (g)', value: imageData.fat_g },
+                    ].map(({ key, label, value }) =>
+                      value !== undefined ? (
+                        <div key={key}>
+                          <label className="block text-xs font-medium mb-1">{label}</label>
+                          <input
+                            type="number"
+                            value={value}
+                            onChange={(e) =>
+                              setImageData((p) =>
+                                p
+                                  ? {
+                                      ...p,
+                                      [key]: parseFloat(e.target.value) || 0,
+                                    }
+                                  : null
+                              )
+                            }
+                            className="w-full px-2 py-1 border border-border rounded text-sm"
+                          />
+                        </div>
+                      ) : null
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {view === 'custom' && (
             <div className="space-y-4">
               <div>
@@ -474,12 +643,55 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
         {/* Footer */}
         <div className="border-t border-border px-6 py-4 space-y-2">
           {view === 'search' && (
+            <>
+              <button
+                onClick={() => setView('image')}
+                className="w-full py-2 px-4 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
+              >
+                Upload image
+              </button>
+              <button
+                onClick={() => setView('custom')}
+                className="w-full py-2 px-4 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
+              >
+                Log custom meal
+              </button>
+            </>
+          )}
+
+          {view === 'image' && (
             <button
-              onClick={() => setView('custom')}
-              className="w-full py-2 px-4 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
+              onClick={() => {
+                setView('search')
+                setImageData(null)
+                setImagePreview(null)
+              }}
+              className="w-full py-2 px-4 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm"
             >
-              Log custom meal
+              Back
             </button>
+          )}
+
+          {view === 'image-detail' && (
+            <>
+              <button
+                onClick={handleImageConfirm}
+                disabled={addMeal.isPending}
+                className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors font-medium"
+              >
+                Add to {mealType}
+              </button>
+              <button
+                onClick={() => {
+                  setView('image')
+                  setImageData(null)
+                  setImagePreview(null)
+                }}
+                className="w-full py-2 px-4 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm"
+              >
+                Back
+              </button>
+            </>
           )}
 
           {view === 'detail' && (
@@ -502,7 +714,7 @@ export default function AddMealDrawer({ open, onOpenChange, initialMealType, dat
             </button>
           )}
 
-          {view !== 'search' && (
+          {view !== 'search' && view !== 'image' && view !== 'image-detail' && (
             <button
               onClick={() => {
                 setView('search')

@@ -1,3 +1,5 @@
+## Deprecated Now
+
 # CalorieQ Frontend — Incremental Build Plan
 
 ## Phase Summary
