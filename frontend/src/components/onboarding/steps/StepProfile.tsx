@@ -43,11 +43,10 @@ export default function StepProfile({ defaultValues, onNext, onSkip }: Props) {
   const selectedActivity = watch('activity_level')
 
   return (
-    <form onSubmit={handleSubmit(onNext)} className="space-y-6">
-      <div className="text-center space-y-1">
-        <div className="text-3xl mb-2">🧍</div>
-        <h2 className="text-xl font-bold text-foreground">About you</h2>
-        <p className="text-sm text-muted-foreground">Used to calculate your personalised calorie target</p>
+    <form onSubmit={handleSubmit(onNext)} className="space-y-4">
+      <div className="text-center space-y-0.5">
+        <h2 className="text-lg font-bold text-foreground">About you</h2>
+        <p className="text-xs text-muted-foreground">Used to calculate your personalised calorie target</p>
       </div>
 
       {/* Height + Weight */}
@@ -119,26 +118,24 @@ export default function StepProfile({ defaultValues, onNext, onSkip }: Props) {
       {/* Activity level cards */}
       <div className="space-y-2">
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Activity level</label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-1.5">
           {ACTIVITY_LEVELS.map(({ value, label, desc, icon }) => (
             <button
               key={value}
               type="button"
               onClick={() => setValue('activity_level', value, { shouldValidate: true })}
               className={cn(
-                'flex items-start gap-3 p-3 rounded-xl border text-left transition-all',
+                'flex items-center gap-3 px-3 py-2 rounded-xl border text-left transition-all',
                 selectedActivity === value
-                  ? 'bg-primary/10 border-primary text-foreground'
-                  : 'bg-muted border-border text-muted-foreground hover:border-primary/40',
+                  ? 'bg-primary/10 border-primary'
+                  : 'bg-muted border-border hover:border-primary/40',
               )}
             >
-              <span className="text-xl mt-0.5">{icon}</span>
-              <div>
-                <div className={cn('text-sm font-medium', selectedActivity === value ? 'text-foreground' : 'text-foreground/80')}>
-                  {label}
-                </div>
-                <div className="text-xs text-muted-foreground">{desc}</div>
-              </div>
+              <span className="text-lg shrink-0">{icon}</span>
+              <span className={cn('text-sm font-medium flex-1', selectedActivity === value ? 'text-foreground' : 'text-foreground/80')}>
+                {label}
+              </span>
+              <span className="text-xs text-muted-foreground">{desc}</span>
             </button>
           ))}
         </div>

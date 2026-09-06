@@ -119,10 +119,13 @@ export default function OnboardingWizard({ userName, onFinish }: Props) {
   return (
     // Full-screen overlay
     <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl p-7">
+      <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl flex flex-col max-h-[calc(100svh-2rem)]">
         {step !== 'welcome' && step !== 'done' && (
-          <ProgressDots current={currentStepIndex} />
+          <div className="px-7 pt-6 shrink-0">
+            <ProgressDots current={currentStepIndex} />
+          </div>
         )}
+        <div className="overflow-y-auto px-7 py-6 flex-1">
 
         {step === 'welcome' && (
           <StepWelcome name={userName} onNext={() => setStep('profile')} />
@@ -148,6 +151,7 @@ export default function OnboardingWizard({ userName, onFinish }: Props) {
         {step === 'done' && completedGoal && (
           <StepDone goal={completedGoal} onFinish={handleFinish} />
         )}
+        </div>
       </div>
     </div>
   )
