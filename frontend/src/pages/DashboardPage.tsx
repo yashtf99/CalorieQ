@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { AlertCircle } from 'lucide-react'
-import { useDailySummary, useWeeklyReport } from '@/api/reports'
+import { useDailySummary } from '@/api/reports'
 import CalorieRing from '@/components/dashboard/CalorieRing'
 import DateSelector from '@/components/dashboard/DateSelector'
 import MacroCard from '@/components/dashboard/MacroCard'
-import { CalorieRingSkeleton, MacroCardSkeleton, MealsSectionSkeleton, WeeklyChartsSkeleton } from '@/components/dashboard/SummarySkeletons'
+import { CalorieRingSkeleton, MacroCardSkeleton, MealsSectionSkeleton } from '@/components/dashboard/SummarySkeletons'
 import MealsSection from '@/components/dashboard/meals/MealsSection'
-import WeeklyCaloriesChart from '@/components/dashboard/WeeklyCaloriesChart'
-import GoalAdherenceCard from '@/components/dashboard/GoalAdherenceCard'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { useAuthStore } from '@/store/authStore'
 import { useDateStore } from '@/store/dateStore'
@@ -26,7 +24,6 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
   const selectedDate = useDateStore((s) => s.selectedDate)
   const { data, isLoading, isError, refetch } = useDailySummary(selectedDate)
-  const { data: weeklyReport } = useWeeklyReport(selectedDate)
 
   const [wizardDismissed, setWizardDismissed] = useState(
     () => localStorage.getItem(ONBOARDING_SKIP_KEY) === 'true',
@@ -98,16 +95,6 @@ export default function DashboardPage() {
 
         {/* meals section */}
         {isLoading ? <MealsSectionSkeleton /> : <MealsSection date={selectedDate} />}
-
-        {/* weekly report */}
-        {isLoading ? (
-          <WeeklyChartsSkeleton />
-        ) : weeklyReport ? (
-          <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-4">
-            <WeeklyCaloriesChart report={weeklyReport} />
-            <GoalAdherenceCard report={weeklyReport} />
-          </div>
-        ) : null}
 
         {/* no goal nudge — only shown after wizard skipped */}
         {!isLoading && data && !data.goal && wizardDismissed && (

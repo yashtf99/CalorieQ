@@ -80,9 +80,9 @@ export default function CalorieRing({ consumed, goal }: Props) {
           <>
             <div>
               <p className="text-xl font-bold tabular-nums">
-                {remaining! >= 0 ? remaining!.toLocaleString() : `${Math.abs(remaining!).toLocaleString()} over`}
+                {remaining! >= 0 ? remaining!.toLocaleString() : `${Math.abs(remaining!).toLocaleString()}`}
               </p>
-              <p className="text-xs text-muted-foreground">of {goal.toLocaleString()} goal</p>
+              <p className="text-xs text-muted-foreground">{remaining! >= 0 ? 'left' : state === 'over' ? 'over' : 'exceeded'} of {goal.toLocaleString()} goal</p>
             </div>
             {message && (
               <p className={`text-xs ${
