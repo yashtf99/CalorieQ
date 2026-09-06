@@ -22,7 +22,6 @@ class GoalOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    user_id: str
     goal_type: str
     daily_calories: float | None
     protein_g: float | None
@@ -32,4 +31,3 @@ class GoalOut(BaseModel):
     weight_target_kg: float | None
     active_from: datetime
     active_to: datetime | None
-    created_at: datetime

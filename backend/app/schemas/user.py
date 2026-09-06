@@ -45,7 +45,6 @@ class UserProfileIn(BaseModel):
 
 class UserProfileOut(BaseModel):
     """current_weight_kg is derived from the latest weight_logs row, not the profile table."""
-    user_id: str
     dob: date | None
     gender: str | None
     height_cm: float | None

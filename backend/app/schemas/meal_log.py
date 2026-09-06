@@ -70,7 +70,6 @@ class MealLogOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    user_id: str
     food_item_id: str | None
     food_name_snapshot: str
     meal_type: str
@@ -84,4 +83,3 @@ class MealLogOut(BaseModel):
     source: str
     notes: str | None
     logged_at: datetime
-    created_at: datetime

@@ -31,9 +31,8 @@ def _latest_weight(db: Session, user_id: str) -> WeightLog | None:
     )
 
 
-def _build_profile_dict(user_id: str, profile: UserProfile | None, weight: WeightLog | None) -> dict:
+def _build_profile_dict(profile: UserProfile | None, weight: WeightLog | None) -> dict:
     return {
-        "user_id": user_id,
         "dob": profile.dob if profile else None,
         "gender": profile.gender if profile else None,
         "height_cm": float(profile.height_cm) if profile and profile.height_cm is not None else None,
@@ -47,7 +46,7 @@ def get_profile(db: Session, user_id: str) -> dict:
     profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
     # Always query latest weight — a weight_log row can exist even when no profile row does
     latest_weight = _latest_weight(db, user_id)
-    return _build_profile_dict(user_id, profile, latest_weight)
+    return _build_profile_dict(profile, latest_weight)
 
 
 def update_profile(db: Session, user_id: str, req: UserProfileIn) -> dict:

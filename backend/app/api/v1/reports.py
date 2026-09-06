@@ -35,7 +35,7 @@ def weekly_report(
     current_user: User = Depends(get_current_user),
 ):
     start_d, end_d, user_tz = report_service.resolve_range(week_of, start, end, tz)
-    return report_service.get_weekly_report(db, current_user.id, start_d, end_d, user_tz, tz)
+    return report_service.get_weekly_report(db, current_user.id, start_d, end_d, user_tz)
 
 
 @router.get("/micros", response_model=MicrosReportOut)
@@ -48,4 +48,4 @@ def micros_report(
     current_user: User = Depends(get_current_user),
 ):
     start_d, end_d, user_tz = report_service.resolve_range(week_of, start, end, tz)
-    return report_service.get_micros_report(db, current_user.id, start_d, end_d, user_tz, tz)
+    return report_service.get_micros_report(db, current_user.id, start_d, end_d, user_tz)

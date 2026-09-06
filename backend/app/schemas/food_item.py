@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -64,8 +63,6 @@ class FoodItemDetailOut(FoodItemSearchOut):
     vitc_mg: float | None
     carotenoids_ug: float | None
     is_verified: bool
-    created_by: str | None
-    created_at: datetime
     portions: list[FoodPortionOut] = []
 
 

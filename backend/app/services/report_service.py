@@ -137,15 +137,14 @@ def _active_goal(db: Session, user_id: str) -> Goal | None:
     )
 
 
-def _goal_at_date(db: Session, user_id: str, d: date, user_tz) -> Goal | None:
-    """Goal that was active at midnight of d in user_tz."""
-    midnight_utc, _ = _day_utc_bounds(d, user_tz)
+def _goal_for_period(db: Session, user_id: str, start_d: date, end_d: date, user_tz) -> Goal | None:
+    """Most recently set goal that started at or before the end of the period."""
+    _, end_utc = _range_utc(start_d, end_d, user_tz)
     return (
         db.query(Goal)
         .filter(
             Goal.user_id == user_id,
-            Goal.active_from <= midnight_utc,
-            or_(Goal.active_to == None, Goal.active_to > midnight_utc),  # noqa: E711
+            Goal.active_from <= end_utc,
         )
         .order_by(Goal.active_from.desc())
         .first()
@@ -193,7 +192,6 @@ def get_daily_summary(
 
     return {
         "date": target_date.isoformat(),
-        "tz": tz_str,
         "goal": gd,
         "consumed": consumed,
         "remaining": remaining,
@@ -207,7 +205,6 @@ def get_weekly_report(
     start_d: date,
     end_d: date,
     user_tz,
-    tz_str: str,
 ) -> dict:
     start_utc, end_utc = _range_utc(start_d, end_d, user_tz)
 
@@ -239,7 +236,7 @@ def get_weekly_report(
     else:
         period_avg = {"energy_kcal": 0.0, "protein_g": 0.0, "carb_g": 0.0, "fat_g": 0.0, "fibre_g": 0.0}
 
-    goal = _goal_at_date(db, user_id, start_d, user_tz)
+    goal = _goal_for_period(db, user_id, start_d, end_d, user_tz)
 
     weight_logs = db.query(WeightLog).filter(
         WeightLog.user_id == user_id,
@@ -250,7 +247,6 @@ def get_weekly_report(
     return {
         "start": start_d.isoformat(),
         "end": end_d.isoformat(),
-        "tz": tz_str,
         "days_with_logs": days_with_logs,
         "goal": _goal_dict(goal),
         "actual_period_avg": period_avg,
@@ -268,7 +264,6 @@ def get_micros_report(
     start_d: date,
     end_d: date,
     user_tz,
-    tz_str: str,
 ) -> dict:
     start_utc, end_utc = _range_utc(start_d, end_d, user_tz)
 
@@ -294,7 +289,6 @@ def get_micros_report(
     return {
         "start": start_d.isoformat(),
         "end": end_d.isoformat(),
-        "tz": tz_str,
         "note": "Free-form entries without a linked food item are excluded — micro data requires a food item reference.",
         "totals": {col: totals.get(col) for col in MICRO_COLUMNS},
     }

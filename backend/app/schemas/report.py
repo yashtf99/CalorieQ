@@ -27,7 +27,6 @@ class RemainingTargets(BaseModel):
 
 class DailySummaryOut(BaseModel):
     date: str
-    tz: str
     goal: GoalTargets | None
     consumed: ConsumedTotals
     remaining: RemainingTargets | None
@@ -51,7 +50,6 @@ class WeightLogPoint(BaseModel):
 class WeeklyReportOut(BaseModel):
     start: str
     end: str
-    tz: str
     days_with_logs: int
     goal: GoalTargets | None
     actual_period_avg: ConsumedTotals
@@ -62,6 +60,5 @@ class WeeklyReportOut(BaseModel):
 class MicrosReportOut(BaseModel):
     start: str
     end: str
-    tz: str
     note: str
     totals: dict[str, float | None]
