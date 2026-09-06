@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
-import { apiClient } from './client'
+import axios from 'axios'
+import { useAuthStore } from '@/store/authStore'
 
 export interface ImageExtractionResult {
   is_nutrition_label: boolean
@@ -17,12 +18,22 @@ export interface ImageExtractionResult {
 
 export function useExtractImage() {
   return useMutation({
-    mutationFn: (file: File) => {
+    mutationFn: async (file: File) => {
       const formData = new FormData()
       formData.append('file', file)
-      return apiClient
-        .post<ImageExtractionResult>('/ai/extract_image', formData)
-        .then((r) => r.data)
+
+      const token = useAuthStore.getState().accessToken
+      const response = await axios.post<ImageExtractionResult>(
+        `${import.meta.env.VITE_API_BASE_URL}/ai/extract_image`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            // Don't set Content-Type — let axios handle it for FormData
+          },
+        }
+      )
+      return response.data
     },
   })
 }

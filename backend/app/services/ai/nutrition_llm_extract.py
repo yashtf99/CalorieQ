@@ -6,12 +6,19 @@ Uses Bedrock Nova model with structured output for nutrition extraction.
 
 import base64
 import mimetypes
+import os
 from typing import Optional
 
 from langchain_aws import ChatBedrockConverse
 from pydantic import BaseModel, Field
 
 from config import settings
+
+
+def _ensure_aws_credentials() -> None:
+    """Set AWS credentials from settings to environment."""
+    if settings.AWS_BEARER_TOKEN_BEDROCK:
+        os.environ["AWS_BEARER_TOKEN_BEDROCK"] = settings.AWS_BEARER_TOKEN_BEDROCK
 
 
 class MealNutrition(BaseModel):
@@ -75,6 +82,7 @@ def extract_nutrition_from_text(
     region_name: str | None = None,
 ) -> dict:
     """Call the LLM with structured output and return a plain dict."""
+    _ensure_aws_credentials()
     model = model or settings.BEDROCK_MODEL_ID
     region_name = region_name or settings.AWS_REGION
     llm = ChatBedrockConverse(model=model, region_name=region_name)
@@ -147,6 +155,7 @@ def extract_nutrition_from_image(
     region_name: str | None = None,
 ) -> dict:
     """Send the raw image to the multimodal LLM and get back estimated nutrition."""
+    _ensure_aws_credentials()
     model = model or settings.BEDROCK_MODEL_ID
     region_name = region_name or settings.AWS_REGION
 
