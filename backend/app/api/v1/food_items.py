@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.constraints import FOOD_SEARCH_PAGE_SIZE_MAX
 from app.models.user import User
 from app.orm.session import get_db
 from app.schemas.common import PaginatedResponse, make_paginated
@@ -16,7 +17,7 @@ def search_food_items(
     q: str = Query(default="", min_length=0),
     source: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=10, ge=1, le=20),
+    page_size: int = Query(default=10, ge=1, le=FOOD_SEARCH_PAGE_SIZE_MAX),
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):

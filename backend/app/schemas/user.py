@@ -3,11 +3,13 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.constraints import (
+    PROFILE_HEIGHT_GT, PROFILE_HEIGHT_LT,
+    PROFILE_WEIGHT_GT, PROFILE_WEIGHT_LT,
+)
 
 ActivityLevel = Literal["sedentary", "lightly_active", "active", "very_active"]
 
-
-# ── User ──────────────────────────────────────────────────────────────────────
 
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -31,16 +33,13 @@ class RegisterResponse(BaseModel):
     expires_in: int
 
 
-# ── Profile ───────────────────────────────────────────────────────────────────
-
 class UserProfileIn(BaseModel):
     """All fields optional — supports partial PATCH semantics."""
     dob: date | None = None
     gender: Literal["male", "female", "other", "prefer_not_to_say"] | None = None
-    height_cm: float | None = Field(default=None, gt=50, lt=300)
+    height_cm: float | None = Field(default=None, gt=PROFILE_HEIGHT_GT, lt=PROFILE_HEIGHT_LT)
     activity_level: ActivityLevel | None = None
-    # Providing current_weight_kg creates a weight_log entry; it is not stored on the profile row.
-    current_weight_kg: float | None = Field(default=None, gt=20, lt=700)
+    current_weight_kg: float | None = Field(default=None, gt=PROFILE_WEIGHT_GT, lt=PROFILE_WEIGHT_LT)
 
 
 class UserProfileOut(BaseModel):
@@ -50,4 +49,4 @@ class UserProfileOut(BaseModel):
     height_cm: float | None
     activity_level: str | None
     current_weight_kg: float | None
-    updated_at: datetime | None  # None when profile has never been set
+    updated_at: datetime | None

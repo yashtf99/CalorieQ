@@ -1,7 +1,7 @@
 from datetime import datetime, time, timedelta, timezone
 
 import pytz
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -10,6 +10,7 @@ from app.models.user import User
 from app.orm.session import get_db
 from app.schemas.common import PaginatedResponse, make_paginated
 from app.schemas.meal_log import MealLogIn, MealLogOut, MealLogPatchIn
+from app.schemas.params import MealListParams
 from app.services import meal_log_service
 
 router = APIRouter(prefix="/meals", tags=["meals"])
@@ -17,65 +18,36 @@ router = APIRouter(prefix="/meals", tags=["meals"])
 
 def _parse_bound(value: str, user_tz, is_end_date_only: bool = False) -> datetime:
     """
-    Parse a date or datetime string into a tz-aware datetime.
-
-    Accepted formats:
-      - YYYY-MM-DD            → treated as midnight in user_tz
-                                (if is_end_date_only, extended to next midnight so the
-                                 whole day is included in a half-open [start, end) range)
-      - YYYY-MM-DDTHH:MM:SS   → naive, treated as user_tz
-      - YYYY-MM-DDTHH:MM      → naive, treated as user_tz
-      - YYYY-MM-DDTHH:MM:SS±HH:MM  → explicit offset, used directly
+    YYYY-MM-DD            → midnight in user_tz (end extends +1 day for inclusive range)
+    YYYY-MM-DDTHH:MM:SS   → naive, localised to user_tz
+    YYYY-MM-DDTHH:MM:SS±HH:MM → explicit offset used directly
     """
     try:
         dt = datetime.fromisoformat(value)
     except ValueError:
-        raise UnprocessableError(
-            f"Cannot parse '{value}'. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS"
-        )
+        raise UnprocessableError(f"Cannot parse '{value}'. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS")
 
     is_date_only = "T" not in value and " " not in value
-
     if dt.tzinfo is None:
         dt = user_tz.localize(dt)
-
     if is_date_only and is_end_date_only:
         dt = dt + timedelta(days=1)
-
     return dt
 
 
-def _resolve_date_range(
-    date: str | None,
-    start: str | None,
-    end: str | None,
-    tz: str,
-) -> tuple[datetime, datetime]:
-    """Return UTC-aware (start_inclusive, end_exclusive) bounds."""
-    if date and (start or end):
-        raise UnprocessableError("Use either date or start/end — not both")
-    if (start and not end) or (end and not start):
-        raise UnprocessableError("start and end must both be provided")
+def resolve_meal_date_range(params: MealListParams) -> tuple[datetime, datetime]:
+    """Convert validated MealListParams into naive-UTC (start, end) bounds."""
+    user_tz = pytz.timezone(params.tz)
 
-    try:
-        user_tz = pytz.timezone(tz)
-    except pytz.UnknownTimeZoneError:
-        raise UnprocessableError(f"Unknown timezone: {tz}")
-
-    if date:
-        try:
-            day = datetime.strptime(date, "%Y-%m-%d").date()
-        except ValueError:
-            raise UnprocessableError("date must be YYYY-MM-DD")
+    if params.date:
+        day = datetime.strptime(params.date, "%Y-%m-%d").date()
         start_local = user_tz.localize(datetime.combine(day, time.min))
         end_local = start_local + timedelta(days=1)
-
-    elif start and end:
-        start_local = _parse_bound(start, user_tz, is_end_date_only=False)
-        end_local = _parse_bound(end, user_tz, is_end_date_only=True)
+    elif params.start and params.end:
+        start_local = _parse_bound(params.start, user_tz, is_end_date_only=False)
+        end_local = _parse_bound(params.end, user_tz, is_end_date_only=True)
         if end_local <= start_local:
             raise UnprocessableError("end must be after start")
-
     else:
         today = datetime.now(user_tz).date()
         start_local = user_tz.localize(datetime.combine(today, time.min))
@@ -95,22 +67,16 @@ def create_meal(
 
 @router.get("", response_model=PaginatedResponse[MealLogOut])
 def list_meals(
-    date: str | None = Query(default=None, description="YYYY-MM-DD — whole day shortcut"),
-    start: str | None = Query(default=None, description="YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS (range start, inclusive)"),
-    end: str | None = Query(default=None, description="YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS (range end — date inclusive, datetime exclusive)"),
-    tz: str = Query(default="UTC", description="IANA timezone e.g. Asia/Kolkata"),
-    meal_type: str | None = Query(default=None),
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=10, ge=1, le=100),
+    params: MealListParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    date_start, date_end = _resolve_date_range(date, start, end, tz)
+    date_start, date_end = resolve_meal_date_range(params)
     logs, total = meal_log_service.list_meal_logs(
-        db, current_user.id, date_start, date_end, meal_type, page, page_size
+        db, current_user.id, date_start, date_end, params.meal_type, params.page, params.page_size
     )
     return make_paginated(
-        [MealLogOut.model_validate(l) for l in logs], total, page, page_size
+        [MealLogOut.model_validate(l) for l in logs], total, page=params.page, page_size=params.page_size
     )
 
 

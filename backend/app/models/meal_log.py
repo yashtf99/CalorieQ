@@ -1,14 +1,33 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.constraints import (
+    MEAL_CARB_GE, MEAL_ENERGY_GE, MEAL_ENERGY_LT,
+    MEAL_FAT_GE, MEAL_PROTEIN_GE,
+    MEAL_QUANTITY_GT, MEAL_QUANTITY_LT,
+)
 from app.orm.base import Base
 
 
 class MealLog(Base):
     __tablename__ = "user_meal_logs"
+    __table_args__ = (
+        CheckConstraint(
+            f"quantity_g > {MEAL_QUANTITY_GT} AND quantity_g < {MEAL_QUANTITY_LT}",
+            name="ck_meal_quantity",
+        ),
+        CheckConstraint(
+            f"energy_kcal >= {MEAL_ENERGY_GE} AND energy_kcal < {MEAL_ENERGY_LT}",
+            name="ck_meal_energy",
+        ),
+        CheckConstraint(
+            f"protein_g >= {MEAL_PROTEIN_GE} AND carb_g >= {MEAL_CARB_GE} AND fat_g >= {MEAL_FAT_GE}",
+            name="ck_meal_macros",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id: Mapped[str] = mapped_column(

@@ -3,19 +3,23 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.constraints import (
+    GOAL_CALORIES_GT, GOAL_CALORIES_LT,
+    GOAL_MACRO_GE, GOAL_MACRO_LT,
+    GOAL_WEIGHT_GT, GOAL_WEIGHT_LT,
+)
 
 GoalType = Literal["lose", "maintain", "gain"]
 
 
 class GoalIn(BaseModel):
     goal_type: GoalType
-    # Numeric(7,2) → max 99999.99; enforce here so we return 400 not 500
-    daily_calories: float | None = Field(default=None, gt=0, lt=100_000)
-    protein_g: float | None = Field(default=None, ge=0, lt=100_000)
-    carbs_g: float | None = Field(default=None, ge=0, lt=100_000)
-    fat_g: float | None = Field(default=None, ge=0, lt=100_000)
-    fibre_g: float | None = Field(default=None, ge=0, lt=100_000)
-    weight_target_kg: float | None = Field(default=None, gt=0, lt=700)
+    daily_calories: float | None = Field(default=None, gt=GOAL_CALORIES_GT, lt=GOAL_CALORIES_LT)
+    protein_g: float | None = Field(default=None, ge=GOAL_MACRO_GE, lt=GOAL_MACRO_LT)
+    carbs_g: float | None = Field(default=None, ge=GOAL_MACRO_GE, lt=GOAL_MACRO_LT)
+    fat_g: float | None = Field(default=None, ge=GOAL_MACRO_GE, lt=GOAL_MACRO_LT)
+    fibre_g: float | None = Field(default=None, ge=GOAL_MACRO_GE, lt=GOAL_MACRO_LT)
+    weight_target_kg: float | None = Field(default=None, gt=GOAL_WEIGHT_GT, lt=GOAL_WEIGHT_LT)
 
 
 class GoalOut(BaseModel):

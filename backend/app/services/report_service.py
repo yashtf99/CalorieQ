@@ -12,8 +12,7 @@ from app.models.meal_log import MealLog
 from app.models.weight_log import WeightLog
 
 # ── Constants (change WEEK_START_DAY to 0 for Mon-Sun, 6 for Sun-Sat) ────────
-WEEK_START_DAY = 6   # 6 = Sunday (Python weekday: 0=Mon … 6=Sun)
-MAX_REPORT_DAYS = 90
+from app.core.constraints import REPORT_MAX_DAYS as MAX_REPORT_DAYS, WEEK_START_DAY
 
 MICRO_COLUMNS: list[str] = [
     "calcium_mg", "phosphorus_mg", "magnesium_mg", "potassium_mg",
@@ -42,29 +41,17 @@ def resolve_range(
     end: str | None,
     tz_str: str,
 ) -> tuple[date, date, pytz.BaseTzInfo]:
-    try:
-        user_tz = pytz.timezone(tz_str)
-    except pytz.UnknownTimeZoneError:
-        raise UnprocessableError(f"Unknown timezone: {tz_str}")
-
-    if week_of and (start or end):
-        raise UnprocessableError("Use week_of or start/end — not both")
-    if bool(start) != bool(end):
-        raise UnprocessableError("start and end must both be provided")
+    """
+    Pure domain logic — input format/mutual-exclusion validation is done upstream
+    in ReportRangeParams before this is called.
+    """
+    user_tz = pytz.timezone(tz_str)
 
     if week_of:
-        try:
-            start_d, end_d = week_bounds(datetime.strptime(week_of, "%Y-%m-%d").date())
-        except ValueError:
-            raise UnprocessableError("week_of must be YYYY-MM-DD")
+        start_d, end_d = week_bounds(datetime.strptime(week_of, "%Y-%m-%d").date())
     elif start and end:
-        try:
-            start_d = datetime.strptime(start, "%Y-%m-%d").date()
-            end_d = datetime.strptime(end, "%Y-%m-%d").date()
-        except ValueError:
-            raise UnprocessableError("start/end must be YYYY-MM-DD")
-        if end_d < start_d:
-            raise UnprocessableError("end must be on or after start")
+        start_d = datetime.strptime(start, "%Y-%m-%d").date()
+        end_d = datetime.strptime(end, "%Y-%m-%d").date()
     else:
         start_d, end_d = week_bounds(datetime.now(user_tz).date())
 
@@ -156,18 +143,9 @@ def _goal_for_period(db: Session, user_id: str, start_d: date, end_d: date, user
 def get_daily_summary(
     db: Session, user_id: str, date_str: str | None, tz_str: str
 ) -> dict:
-    try:
-        user_tz = pytz.timezone(tz_str)
-    except pytz.UnknownTimeZoneError:
-        raise UnprocessableError(f"Unknown timezone: {tz_str}")
-
-    if date_str:
-        try:
-            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        except ValueError:
-            raise UnprocessableError("date must be YYYY-MM-DD")
-    else:
-        target_date = datetime.now(user_tz).date()
+    # Input format validated upstream in DailySummaryParams
+    user_tz = pytz.timezone(tz_str)
+    target_date = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else datetime.now(user_tz).date()
 
     start_utc, end_utc = _day_utc_bounds(target_date, user_tz)
 

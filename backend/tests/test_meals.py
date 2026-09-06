@@ -243,7 +243,7 @@ def test_quantity_zero_returns_400(client, token_headers):
 
 
 def test_energy_above_cap_returns_400(client, token_headers):
-    r = client.post(MEALS, json={**_FREE_MEAL, "energy_kcal": 11000.0}, headers=token_headers)
+    r = client.post(MEALS, json={**_FREE_MEAL, "energy_kcal": 21_000.0}, headers=token_headers)
     assert r.status_code == 400
 
 
