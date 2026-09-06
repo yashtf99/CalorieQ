@@ -6,8 +6,9 @@ The rule: a meal logged at 2024-06-15T01:00:00+05:30 (IST) is
 query and on 2024-06-15 in an IST query.
 """
 
-MEALS    = "/api/v1/meals"
-REGISTER = "/api/v1/auth/register"
+MEALS         = "/api/v1/meals"
+MEALS_HISTORY = "/api/v1/meals/history"
+REGISTER      = "/api/v1/auth/register"
 
 _BASE = {
     "food_name_snapshot": "Test Food",
@@ -28,7 +29,7 @@ def _log(client, headers, logged_at: str):
 
 
 def _count(client, headers, **params):
-    r = client.get(MEALS, params=params, headers=headers)
+    r = client.get(MEALS_HISTORY, params=params, headers=headers)
     assert r.status_code == 200, r.json()
     return r.json()["meta"]["total"]
 
@@ -183,7 +184,7 @@ def test_mixed_date_and_datetime_bounds(client, token_headers):
 
 
 def test_end_before_start_datetime_returns_400(client, token_headers):
-    r = client.get(MEALS, params={
+    r = client.get(MEALS_HISTORY, params={
         "start": "2024-06-15T14:00:00",
         "end": "2024-06-15T08:00:00",
         "tz": "UTC",

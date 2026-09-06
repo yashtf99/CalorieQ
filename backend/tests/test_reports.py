@@ -67,7 +67,7 @@ def test_daily_summary_no_logs_returns_zeros(client, token_headers):
     assert r.status_code == 200
     body = r.json()
     assert body["consumed"]["energy_kcal"] == 0.0
-    assert body["meals_logged"] == 0
+    assert body["meals_tracked"] == 0
     assert body["goal"] is None
     assert body["remaining"] is None
 
@@ -79,7 +79,7 @@ def test_daily_summary_aggregates_day_logs(client, token_headers):
 
     r = client.get(DAILY_SUMMARY, params={"date": "2024-06-15", "tz": "UTC"}, headers=token_headers)
     body = r.json()
-    assert body["meals_logged"] == 2
+    assert body["meals_tracked"] == 2
     assert body["consumed"]["energy_kcal"] == 600.0  # 2 × 300
 
 
@@ -110,9 +110,9 @@ def test_daily_summary_respects_tz(client, token_headers):
     # 23:30 UTC Jun 14 = 05:00 IST Jun 15
     _log_meal(client, token_headers, "2024-06-14T23:30:00+00:00")
 
-    assert client.get(DAILY_SUMMARY, params={"date": "2024-06-14", "tz": "UTC"}, headers=token_headers).json()["meals_logged"] == 1
-    assert client.get(DAILY_SUMMARY, params={"date": "2024-06-15", "tz": IST},   headers=token_headers).json()["meals_logged"] == 1
-    assert client.get(DAILY_SUMMARY, params={"date": "2024-06-14", "tz": IST},   headers=token_headers).json()["meals_logged"] == 0
+    assert client.get(DAILY_SUMMARY, params={"date": "2024-06-14", "tz": "UTC"}, headers=token_headers).json()["meals_tracked"] == 1
+    assert client.get(DAILY_SUMMARY, params={"date": "2024-06-15", "tz": IST},   headers=token_headers).json()["meals_tracked"] == 1
+    assert client.get(DAILY_SUMMARY, params={"date": "2024-06-14", "tz": IST},   headers=token_headers).json()["meals_tracked"] == 0
 
 
 def test_daily_summary_requires_auth(client):

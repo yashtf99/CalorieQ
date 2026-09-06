@@ -65,7 +65,7 @@ def create_meal(
     return meal_log_service.create_meal_log(db, current_user.id, req)
 
 
-@router.get("", response_model=PaginatedResponse[MealLogOut])
+@router.get("/history", response_model=PaginatedResponse[MealLogOut])
 def list_meals(
     params: MealListParams = Depends(),
     db: Session = Depends(get_db),

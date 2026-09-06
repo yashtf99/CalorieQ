@@ -173,7 +173,7 @@ def get_daily_summary(
         "goal": gd,
         "consumed": consumed,
         "remaining": remaining,
-        "meals_logged": len(logs),
+        "meals_tracked": len(logs),
     }
 
 

@@ -30,7 +30,7 @@ class DailySummaryOut(BaseModel):
     goal: GoalTargets | None
     consumed: ConsumedTotals
     remaining: RemainingTargets | None
-    meals_logged: int
+    meals_tracked: int
 
 
 class DailyMacroRow(BaseModel):

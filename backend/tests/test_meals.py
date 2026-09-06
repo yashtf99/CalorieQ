@@ -6,9 +6,10 @@ import uuid
 
 import pytest
 
-REGISTER     = "/api/v1/auth/register"
-FOOD_ITEMS   = "/api/v1/food_items"
-MEALS        = "/api/v1/meals"
+REGISTER      = "/api/v1/auth/register"
+FOOD_ITEMS    = "/api/v1/food_items"
+MEALS         = "/api/v1/meals"
+MEALS_HISTORY = "/api/v1/meals/history"
 
 _FOOD = {
     "name": "Dal Makhani",
@@ -258,7 +259,7 @@ def test_invalid_meal_type_returns_400(client, token_headers):
 
 def test_list_meals_defaults_to_today(client, token_headers):
     client.post(MEALS, json=_FREE_MEAL, headers=token_headers)
-    r = client.get(MEALS, headers=token_headers)
+    r = client.get(MEALS_HISTORY, headers=token_headers)
     assert r.status_code == 200
     assert r.json()["meta"]["total"] == 1
 
@@ -267,13 +268,13 @@ def test_list_meals_with_date_filter(client, token_headers):
     # Use a fixed past date so the test is timezone-agnostic
     meal = {**_FREE_MEAL, "logged_at": "2024-06-15T12:00:00Z"}
     client.post(MEALS, json=meal, headers=token_headers)
-    r = client.get(MEALS, params={"date": "2024-06-15", "tz": "UTC"}, headers=token_headers)
+    r = client.get(MEALS_HISTORY, params={"date": "2024-06-15", "tz": "UTC"}, headers=token_headers)
     assert r.status_code == 200
     assert r.json()["meta"]["total"] == 1
 
 
 def test_list_meals_date_and_range_together_returns_400(client, token_headers):
-    r = client.get(MEALS, params={
+    r = client.get(MEALS_HISTORY, params={
         "date": "2024-01-15",
         "start": "2024-01-01",
         "tz": "UTC",
@@ -282,12 +283,12 @@ def test_list_meals_date_and_range_together_returns_400(client, token_headers):
 
 
 def test_list_meals_start_without_end_returns_400(client, token_headers):
-    r = client.get(MEALS, params={"start": "2024-01-01", "tz": "UTC"}, headers=token_headers)
+    r = client.get(MEALS_HISTORY, params={"start": "2024-01-01", "tz": "UTC"}, headers=token_headers)
     assert r.status_code == 422
 
 
 def test_list_meals_end_before_start_returns_400(client, token_headers):
-    r = client.get(MEALS, params={
+    r = client.get(MEALS_HISTORY, params={
         "start": "2024-01-15",
         "end": "2024-01-01",
         "tz": "UTC",
@@ -296,14 +297,14 @@ def test_list_meals_end_before_start_returns_400(client, token_headers):
 
 
 def test_list_meals_invalid_timezone_returns_400(client, token_headers):
-    r = client.get(MEALS, params={"tz": "Mars/Olympus"}, headers=token_headers)
+    r = client.get(MEALS_HISTORY, params={"tz": "Mars/Olympus"}, headers=token_headers)
     assert r.status_code == 422
 
 
 def test_list_meals_meal_type_filter(client, token_headers):
     client.post(MEALS, json=_FREE_MEAL, headers=token_headers)  # dinner
     client.post(MEALS, json={**_FREE_MEAL, "meal_type": "breakfast"}, headers=token_headers)
-    r = client.get(MEALS, params={"meal_type": "breakfast"}, headers=token_headers)
+    r = client.get(MEALS_HISTORY, params={"meal_type": "breakfast"}, headers=token_headers)
     assert r.json()["meta"]["total"] == 1
     assert r.json()["data"][0]["meal_type"] == "breakfast"
 
@@ -311,7 +312,7 @@ def test_list_meals_meal_type_filter(client, token_headers):
 def test_list_meals_two_users_isolated(client, token_headers):
     client.post(MEALS, json=_FREE_MEAL, headers=token_headers)
     h2 = _second_user(client)
-    r = client.get(MEALS, headers=h2)
+    r = client.get(MEALS_HISTORY, headers=h2)
     assert r.json()["meta"]["total"] == 0
 
 

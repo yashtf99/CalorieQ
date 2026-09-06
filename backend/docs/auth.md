@@ -135,7 +135,7 @@ Access token continues to work until its 24 h expiry. This is acceptable — the
 
 **Threat:** Attacker submits thousands of email/password guesses against `/auth/login`.
 
-**Mitigation:** `bcrypt` with its default cost factor makes each hash verification take ~100–200 ms. 10,000 guesses would take 15–30 minutes on a single core with no parallelism benefit (bcrypt is intentionally sequential). This does not replace rate limiting — rate limiting is a planned addition.
+**Mitigation:** Passwords are SHA-256 pre-hashed before bcrypt. This sidesteps bcrypt's 72-byte truncation (see below) and still produces ~100–200 ms per verification. This does not replace rate limiting — rate limiting is a planned addition.
 
 ---
 
@@ -178,6 +178,14 @@ Legitimate user calls /refresh(refresh_A)
 **Threat:** DB is breached; attacker reads `refresh_tokens` table and replays tokens.
 
 **Mitigation:** Only the `SHA-256` hash of the refresh token is stored, not the raw value. `secrets.token_urlsafe(32)` produces 256 bits of entropy — brute-forcing SHA-256 on a value that large is computationally infeasible. Even with full DB read access, the attacker cannot reconstruct the original token.
+
+---
+
+### bcrypt 72-byte truncation
+
+**Threat:** bcrypt silently truncates passwords at 72 bytes, meaning two passwords that share the same first 72 chars hash identically.
+
+**Mitigation:** Passwords are pre-hashed with SHA-256 (`hashlib.sha256(password.encode()).digest()`) before being passed to bcrypt. SHA-256 always produces a 32-byte output regardless of input length, so bcrypt's limit is never reached. Verified by regression test `test_password_longer_than_72_bytes_is_not_truncated`.
 
 ---
 
