@@ -3,6 +3,7 @@ import type { MealType, MealLogOut } from '@/types/meals'
 import { useMealHistory } from '@/api/meals'
 import MealTypeRow from './MealTypeRow'
 import AddMealDrawer from './AddMealDrawer'
+import EmptyState from '@/components/common/EmptyState'
 
 interface Props {
   date: string
@@ -31,6 +32,8 @@ export default function MealsSection({ date }: Props) {
     setIsDrawerOpen(true)
   }
 
+  const totalMeals = Object.values(grouped).reduce((sum, meals) => sum + meals.length, 0)
+
   if (isLoading) {
     return (
       <div className="bg-card border border-border rounded-xl">
@@ -58,15 +61,31 @@ export default function MealsSection({ date }: Props) {
         </div>
 
         <div>
-          {(Object.keys(grouped) as MealType[]).map((type) => (
-            <MealTypeRow
-              key={type}
-              type={type}
-              entries={grouped[type]}
-              date={date}
-              onAdd={handleAddMeal}
-            />
-          ))}
+          {totalMeals === 0 ? (
+            <div className="px-4 py-8">
+              <EmptyState
+                title="No meals logged"
+                description="Start tracking your nutrition by adding your first meal"
+                action={{
+                  label: '+ Add meal',
+                  onClick: () => {
+                    setInitialMealType(null)
+                    setIsDrawerOpen(true)
+                  },
+                }}
+              />
+            </div>
+          ) : (
+            (Object.keys(grouped) as MealType[]).map((type) => (
+              <MealTypeRow
+                key={type}
+                type={type}
+                entries={grouped[type]}
+                date={date}
+                onAdd={handleAddMeal}
+              />
+            ))
+          )}
         </div>
       </div>
 

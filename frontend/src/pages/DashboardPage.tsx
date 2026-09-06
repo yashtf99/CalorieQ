@@ -5,7 +5,7 @@ import { useDailySummary, useWeeklyReport } from '@/api/reports'
 import CalorieRing from '@/components/dashboard/CalorieRing'
 import DateSelector from '@/components/dashboard/DateSelector'
 import MacroCard from '@/components/dashboard/MacroCard'
-import { CalorieRingSkeleton, MacroCardSkeleton } from '@/components/dashboard/SummarySkeletons'
+import { CalorieRingSkeleton, MacroCardSkeleton, MealsSectionSkeleton, WeeklyChartsSkeleton } from '@/components/dashboard/SummarySkeletons'
 import MealsSection from '@/components/dashboard/meals/MealsSection'
 import WeeklyCaloriesChart from '@/components/dashboard/WeeklyCaloriesChart'
 import GoalAdherenceCard from '@/components/dashboard/GoalAdherenceCard'
@@ -97,15 +97,17 @@ export default function DashboardPage() {
         </div>
 
         {/* meals section */}
-        <MealsSection date={selectedDate} />
+        {isLoading ? <MealsSectionSkeleton /> : <MealsSection date={selectedDate} />}
 
         {/* weekly report */}
-        {weeklyReport && (
+        {isLoading ? (
+          <WeeklyChartsSkeleton />
+        ) : weeklyReport ? (
           <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-4">
             <WeeklyCaloriesChart report={weeklyReport} />
             <GoalAdherenceCard report={weeklyReport} />
           </div>
-        )}
+        ) : null}
 
         {/* no goal nudge — only shown after wizard skipped */}
         {!isLoading && data && !data.goal && wizardDismissed && (
