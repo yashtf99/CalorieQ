@@ -23,6 +23,17 @@ export function useWeeklyReport(weekOf: string) {
   })
 }
 
+export function useWeeklyReportRange(start: string, end: string) {
+  return useQuery({
+    queryKey: ['weekly-report-range', start, end, USER_TZ],
+    queryFn: () =>
+      apiClient
+        .get<WeeklyReportOut>('/reports/weekly', { params: { start, end, tz: USER_TZ } })
+        .then((r) => r.data),
+    enabled: !!start && !!end,
+  })
+}
+
 export function useMicrosReport(start: string, end: string) {
   return useQuery({
     queryKey: ['micros-report', start, end, USER_TZ],

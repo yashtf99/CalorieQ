@@ -10,7 +10,6 @@ const profileSchema = z.object({
   gender: z.enum(['male', 'female', 'other']).optional(),
   height_cm: z.number().int().min(100).max(250).optional(),
   activity_level: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']).optional(),
-  current_weight_kg: z.number().min(20).max(500).optional(),
 })
 
 const goalsSchema = z.object({
@@ -20,7 +19,6 @@ const goalsSchema = z.object({
   carbs_g: z.number().gte(0).lt(1000).optional(),
   fat_g: z.number().gte(0).lt(500).optional(),
   fibre_g: z.number().gte(0).lt(500).optional(),
-  weight_target_kg: z.number().gt(20).lt(500).optional(),
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
@@ -40,7 +38,6 @@ export default function ProfilePage() {
       gender: undefined,
       height_cm: undefined,
       activity_level: 'moderate',
-      current_weight_kg: undefined,
     },
   })
 
@@ -53,7 +50,6 @@ export default function ProfilePage() {
       carbs_g: 225,
       fat_g: 65,
       fibre_g: 25,
-      weight_target_kg: undefined,
     },
   })
 
@@ -201,17 +197,6 @@ export default function ProfilePage() {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Current Weight (kg)</label>
-              <input
-                type="number"
-                step="0.1"
-                {...profileForm.register('current_weight_kg', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm"
-                placeholder="70"
-              />
-              <p className="text-xs text-muted-foreground mt-1">Adds a new weight log entry</p>
-            </div>
           </div>
 
           <button
@@ -297,17 +282,6 @@ export default function ProfilePage() {
                 {...goalsForm.register('fibre_g', { valueAsNumber: true })}
                 className="w-full px-3 py-2 border border-border rounded-lg text-sm"
                 placeholder="25"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Target Weight (kg)</label>
-              <input
-                type="number"
-                step="0.1"
-                {...goalsForm.register('weight_target_kg', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm"
-                placeholder="70"
               />
             </div>
           </div>

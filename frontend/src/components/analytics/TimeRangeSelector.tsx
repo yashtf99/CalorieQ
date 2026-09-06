@@ -49,7 +49,7 @@ export default function TimeRangeSelector({ startDate, endDate, onRangeChange }:
           onClick={() => handlePreset(preset.days)}
           className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
             !showCustom && endDate === today && startDate === format(subDays(startOfToday(), preset.days - 1), 'yyyy-MM-dd')
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/50'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
           }`}
         >
