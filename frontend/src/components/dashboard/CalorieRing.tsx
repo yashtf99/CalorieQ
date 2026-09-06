@@ -1,30 +1,38 @@
-import { cn } from '@/lib/utils'
+import { Flame } from 'lucide-react'
+import { getCalorieState, pickMessage } from '@/lib/calorieMessages'
 
 interface Props {
   consumed: number
   goal: number | null
 }
 
-const RADIUS = 72
-const STROKE = 10
+const RADIUS = 46
+const STROKE = 7
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-function ringColor(pct: number) {
-  if (pct >= 1.05) return 'var(--color-destructive)'
-  if (pct >= 0.9)  return 'oklch(0.78 0.18 80)'  // amber
-  return 'var(--color-primary)'                    // green
+function ringColor(state: string | null) {
+  switch (state) {
+    case 'on_track': return 'var(--color-primary)'
+    case 'near_goal': return 'oklch(0.78 0.18 80)'
+    case 'over': return 'oklch(0.78 0.18 80)'
+    case 'exceeded': return 'var(--color-destructive)'
+    default: return 'var(--color-primary)'
+  }
 }
 
 export default function CalorieRing({ consumed, goal }: Props) {
-  const pct       = goal ? Math.min(consumed / goal, 1.05) : 0
-  const filled    = Math.min(pct, 1) * CIRCUMFERENCE
+  const pct = goal ? Math.min(consumed / goal, 1.05) : 0
+  const filled = Math.min(pct, 1) * CIRCUMFERENCE
   const remaining = goal ? goal - consumed : null
-  const color     = goal ? ringColor(pct) : 'var(--color-primary)'
-  const size      = (RADIUS + STROKE) * 2 + 4
+  const state = goal ? getCalorieState(pct) : null
+  const color = state ? ringColor(state) : 'var(--color-primary)'
+  const message = state ? pickMessage(state) : null
+  const size = (RADIUS + STROKE) * 2 + 4
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-2">
-      <div className="relative" style={{ width: size, height: size }}>
+    <div className="flex items-center gap-5 pl-2 pr-5 py-3">
+      {/* Ring on left */}
+      <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
           {/* track */}
           <circle
@@ -33,7 +41,7 @@ export default function CalorieRing({ consumed, goal }: Props) {
             stroke="var(--color-border)"
             strokeWidth={STROKE}
           />
-          {/* fill — always green up to 100%, stays capped */}
+          {/* fill */}
           {consumed > 0 && (
             <circle
               cx={size / 2} cy={size / 2} r={RADIUS}
@@ -49,36 +57,48 @@ export default function CalorieRing({ consumed, goal }: Props) {
 
         {/* centre text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn('text-4xl font-bold tabular-nums leading-none', consumed === 0 && 'text-muted-foreground')}>
+          <span className={`text-xl font-bold tabular-nums leading-none ${consumed === 0 ? 'text-muted-foreground' : ''}`}>
             {consumed.toLocaleString()}
           </span>
-          <span className="text-xs text-muted-foreground mt-1">kcal eaten</span>
-          {goal && (
-            <span className="text-xs text-muted-foreground">of {goal.toLocaleString()}</span>
-          )}
+          <span className="text-xs text-muted-foreground mt-0.5">kcal</span>
         </div>
       </div>
 
-      {/* remaining / exceeded label */}
-      {goal && (
-        <div className="text-center">
-          {remaining! >= 0 ? (
-            <p className="text-sm text-muted-foreground">
-              <span className="text-foreground font-semibold">{remaining!.toLocaleString()} kcal</span> remaining
-            </p>
-          ) : (
-            <p className="text-sm text-destructive font-semibold">
-              {Math.abs(remaining!).toLocaleString()} kcal over goal
-            </p>
-          )}
+      {/* Info on right */}
+      <div className="flex-1 space-y-2">
+        <div className="flex items-center gap-2">
+          <Flame
+            className="w-5 h-5 flex-shrink-0"
+            style={{
+              color,
+              filter: 'drop-shadow(0 0 8px currentColor)',
+            }}
+          />
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Calories</span>
         </div>
-      )}
-
-      {!goal && (
-        <p className="text-xs text-muted-foreground text-center max-w-[160px]">
-          No goal set — go to Profile to set a daily target
-        </p>
-      )}
+        {goal && (
+          <>
+            <div>
+              <p className="text-xl font-bold tabular-nums">
+                {remaining! >= 0 ? remaining!.toLocaleString() : `${Math.abs(remaining!).toLocaleString()} over`}
+              </p>
+              <p className="text-xs text-muted-foreground">of {goal.toLocaleString()} goal</p>
+            </div>
+            {message && (
+              <p className={`text-xs ${
+                state === 'on_track' || state === 'near_goal' ? 'text-primary' :
+                state === 'over' ? 'text-amber-400' :
+                'text-destructive'
+              }`}>
+                {message}
+              </p>
+            )}
+          </>
+        )}
+        {!goal && (
+          <p className="text-xs text-muted-foreground">Set a goal in Profile</p>
+        )}
+      </div>
     </div>
   )
 }

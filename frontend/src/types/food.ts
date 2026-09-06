@@ -10,6 +10,7 @@ export interface FoodItemSearchOut {
   carb_g: number
   fat_g: number
   fibre_g: number | null
+  portions?: FoodPortion[]
 }
 
 export interface FoodPortion {

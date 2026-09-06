@@ -83,6 +83,11 @@ class FoodItemDetailOut(FoodItemSearchOut):
     portions: list[FoodPortionOut] = []
 
 
+class FoodCategoryCount(BaseModel):
+    category: str
+    count: int
+
+
 FoodSource = Literal["indb", "usda", "user_custom"]
 
 

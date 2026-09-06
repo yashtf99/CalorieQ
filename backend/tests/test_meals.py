@@ -8,6 +8,7 @@ import pytest
 
 REGISTER      = "/api/v1/auth/register"
 FOOD_ITEMS    = "/api/v1/food_items"
+FOOD_RECENT   = "/api/v1/food_items/recent"
 MEALS         = "/api/v1/meals"
 MEALS_HISTORY = "/api/v1/meals/history"
 
@@ -377,3 +378,64 @@ def test_delete_meal_other_user_forbidden(client, token_headers):
     h2 = _second_user(client)
     r = client.delete(f"{MEALS}/{log_id}", headers=h2)
     assert r.status_code == 403
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Recent foods
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_recent_foods_empty_when_no_logs(client, token_headers):
+    r = client.get(FOOD_RECENT, headers=token_headers)
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_recent_foods_returns_logged_items(client, token_headers):
+    food_id_1 = _create_food(client, token_headers).json()["id"]
+    food_id_2 = _create_food(client, token_headers, {**_FOOD, "name": "Paneer Tikka"}).json()["id"]
+    client.post(MEALS, json={**_LINKED_MEAL, "food_item_id": food_id_1}, headers=token_headers)
+    client.post(MEALS, json={**_LINKED_MEAL, "food_item_id": food_id_2}, headers=token_headers)
+    r = client.get(FOOD_RECENT, headers=token_headers)
+    assert r.status_code == 200
+    assert len(r.json()) == 2
+
+
+def test_recent_foods_deduplicates(client, token_headers):
+    food_id = _create_food(client, token_headers).json()["id"]
+    client.post(MEALS, json={**_LINKED_MEAL, "food_item_id": food_id}, headers=token_headers)
+    client.post(MEALS, json={**_LINKED_MEAL, "food_item_id": food_id}, headers=token_headers)
+    r = client.get(FOOD_RECENT, headers=token_headers)
+    assert r.status_code == 200
+    assert len(r.json()) == 1
+
+
+def test_recent_foods_respects_limit(client, token_headers):
+    for i in range(6):
+        food_id = _create_food(client, token_headers, {**_FOOD, "name": f"Food {i}"}).json()["id"]
+        client.post(MEALS, json={**_LINKED_MEAL, "food_item_id": food_id}, headers=token_headers)
+    r = client.get(FOOD_RECENT, params={"limit": 3}, headers=token_headers)
+    assert r.status_code == 200
+    assert len(r.json()) == 3
+
+
+def test_recent_foods_excludes_freeform_entries(client, token_headers):
+    food_id = _create_food(client, token_headers).json()["id"]
+    client.post(MEALS, json={**_LINKED_MEAL, "food_item_id": food_id}, headers=token_headers)
+    client.post(MEALS, json=_FREE_MEAL, headers=token_headers)
+    r = client.get(FOOD_RECENT, headers=token_headers)
+    assert r.status_code == 200
+    assert len(r.json()) == 1
+
+
+def test_recent_foods_user_isolated(client, token_headers):
+    food_id = _create_food(client, token_headers).json()["id"]
+    client.post(MEALS, json={**_LINKED_MEAL, "food_item_id": food_id}, headers=token_headers)
+    h2 = _second_user(client)
+    r = client.get(FOOD_RECENT, headers=h2)
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_recent_foods_requires_auth(client):
+    r = client.get(FOOD_RECENT)
+    assert r.status_code == 401
