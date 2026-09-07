@@ -3,6 +3,87 @@ The Personal Calorie Tracker is a full-stack application designed to help users 
 and understand their daily nutritional intake. Users can log meals across breakfast, lunch, and
 dinner, set personalized health goals, and visualize macro and micronutrient trends over time.
 
+| Layer | Stack |
+|---|---|
+| **Backend** | Python 3.13 · FastAPI · SQLAlchemy 2 · Pydantic v2 · LangGraph |
+| **Database** | SQLite (dev) / MySQL 8+ (prod) |
+| **Frontend** | React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · shadcn/ui · TanStack Query v5 |
+| **AI** | AWS Bedrock (Claude) — image extraction + conversational chat agent |
+
+## First-Time Setup
+
+> Run these steps once after cloning the repo. After that, use the start scripts below.
+
+### 1. Backend — Python environment & dependencies
+
+Requires **Python 3.13**.
+
+```bash
+cd backend
+py -3.13 -m venv .venv
+source .venv/Scripts/activate       # Git Bash on Windows
+pip install -r requirements.txt
+pip install -r requirements-dev.txt  # optional — only needed to run tests
+```
+
+### 2. API keys
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Open `backend/.env` and fill in:
+
+| Variable | What it is |
+|---|---|
+| `SECRET_KEY` | Any long random string — used to sign JWTs |
+| `AWS_BEARER_TOKEN_BEDROCK` | AWS Bedrock bearer token — used by the AI/chat features |
+
+> Non-secret config (DB URL, AWS region, model IDs) lives in `backend/config.py` — no edits needed for local dev.
+
+### 3. Create the database
+
+```bash
+cd backend
+source .venv/Scripts/activate       # if not already active
+python db/create_db.py
+```
+
+Creates `backend/db/calorieq.db`. Re-running is safe. To wipe and recreate:
+
+```bash
+python db/create_db.py --drop
+```
+
+### 4. Ingest food data (~8,800 items — run once)
+
+```bash
+# Still inside backend/ with venv active
+
+# Process raw INDB Excel files → CSV (one-time only)
+python data/process_raw_data.py
+
+# Seed the database (idempotent — safe to re-run)
+python ingest.py
+```
+
+| Source | Items | Notes |
+|---|---|---|
+| INDB | 1,014 | Indian recipes — macros + 30 micros |
+| USDA SR Legacy | 7,793 | Raw ingredients — macros + 37 micros |
+
+### 5. Frontend — Node dependencies
+
+Requires **Node.js ≥ 20.19**.
+
+```bash
+cd frontend
+npm install
+cp .env.example .env   # default already points to http://localhost:8000/api/v1
+```
+
+---
+
 ## Dev Setup
 
 ### Start servers
@@ -86,35 +167,22 @@ netstat -ano | findstr ":8000\|:5173"
 
 ---
 
-## Functional Requirements (directly from Stakeholders)
+## Requirements Completion
 
-- Multi-User Support: Support multiple independent users who can sign up, log in, and
-maintain their own private data.
-- Goal Setting: Ability to set and manage personal health goals (e.g., daily calorie target,
-protein/carb/fat targets, weight goal) through the web app.
-- Meal Entry: Ability to create food entries grouped by meal type (Breakfast, Lunch, Dinner,
-Snacks) with fields for food item name, quantity, and nutritional values (calories, macros,
-micros).
-- Time-Range Listing: List all food entries in a specified time range through the web app,
-filterable by date and meal type.
-- Nutrition Reports & Graphs: Ability to display visual reports including: weekly calorie intake
-trend, macronutrient breakdown (protein, carbs, fat) by day/week, micronutrient summary
-(vitamins, minerals), and goal vs. actual comparison charts.
-- AI-Powered Calorie Extraction: Ability to upload a photo (product nutrition label or a plate
-of food) and automatically extract and pre-fill calorie and nutritional information using AI image
-analysis.
-- Conversational Chat Interface: Build a chat interface powered by an LLM that allows users
-to perform all app actions through natural language — logging meals, checking goals, asking
-nutritional questions, and getting weekly summaries — without touching traditional UI controls
-- Bulk Import via PDF: Support upload of a food diary or nutrition history exported as a PDF
-(tabular format) and automatically parse and import the entries.
+### Core Requirements
 
+| Status | Requirement |
+|---|---|
+| ✅ | **Goal Setting** — Set and manage personal health goals (daily calorie target, protein/carb/fat targets, weight goal) through the web app |
+| ✅ | **Meal Entry** — Create food entries grouped by meal type (Breakfast, Lunch, Dinner, Snacks) with food item name, quantity, calories, macros, and micros |
+| ✅ | **Time-Range Listing** — List all food entries in a specified time range, filterable by date and meal type |
+| ✅ | **Nutrition Reports & Graphs** — Weekly calorie trend, macronutrient breakdown by day/week, micronutrient summary, and goal vs. actual comparison charts |
+| ✅ | **AI-Powered Calorie Extraction** — Upload a photo (nutrition label or food plate) to automatically extract and pre-fill nutritional information using AI image analysis |
 
-## Non-Functional Requirements
+### Bonus Features
 
-- Strict per-user data isolation — nutrition/health data is sensitive.
-- Basic validation on nutrition values (no negative calories, sensible upper bounds) — matters since AI extraction can be noisy.
-- Core meal logging and goal-setting must work even if the AI subsystem (LLM, vision model) is down — graceful degradation, not hard dependency.
-- Keep AI operations async — return an immediate "processing" response and let the client poll for results, rather than blocking on a 5+ second LLM call.
-- Idempotency for AI-triggered writes (re-uploading the same photo for same period shouldn't create duplicates).
-- [Future] Hard per-user rate limits on AI-triggered operations (image extraction, chat) to prevent runaway costs from a single user.
+| Status | Requirement |
+|---|---|
+| ✅ | **Conversational Chat Interface** — LLM-powered chat that lets users log meals, check goals, ask nutritional questions, and get weekly summaries through natural language |
+| ✅ | **Multi-User Support** — Multiple independent users can sign up, log in, and maintain their own private data |
+| ⬜ | **Bulk Import via PDF** — Upload a food diary or nutrition history exported as PDF (tabular format) and automatically parse and import entries |
