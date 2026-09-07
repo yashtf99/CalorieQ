@@ -1,4 +1,7 @@
 # CalorieQ
+
+**[Demo Video](https://drive.google.com/file/d/1DLqr6Kz0un36Hufjte86h9oaNyTofXBL/view?usp=sharing)**
+
 The Personal Calorie Tracker is a full-stack application designed to help users monitor, manage,
 and understand their daily nutritional intake. Users can log meals across breakfast, lunch, and
 dinner, set personalized health goals, and visualize macro and micronutrient trends over time.
