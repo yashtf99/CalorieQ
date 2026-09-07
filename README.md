@@ -8,7 +8,7 @@ dinner, set personalized health goals, and visualize macro and micronutrient tre
 | **Backend** | Python 3.13 · FastAPI · SQLAlchemy 2 · Pydantic v2 · LangGraph |
 | **Database** | SQLite (dev) |
 | **Frontend** | React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · shadcn/ui · TanStack Query v5 |
-| **AI** | AWS Bedrock (Claude) — image extraction + conversational chat agent |
+| **AI** | AWS Bedrock (Amazon Nova Lite v1, multimodal) — image extraction + conversational chat agent |
 
 ## First-Time Setup
 
