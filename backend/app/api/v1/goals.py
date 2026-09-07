@@ -30,7 +30,9 @@ def create_goal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return goal_service.create_goal(db, current_user.id, req)
+    goal = goal_service.create_goal(db, current_user.id, req)
+    db.commit()
+    return goal
 
 
 @router.get("/active", response_model=GoalOut)

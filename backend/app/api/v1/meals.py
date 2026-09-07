@@ -62,7 +62,9 @@ def create_meal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return meal_log_service.create_meal_log(db, current_user.id, req)
+    meal = meal_log_service.create_meal_log(db, current_user.id, req)
+    db.commit()
+    return meal
 
 
 @router.get("/history", response_model=PaginatedResponse[MealLogOut])
@@ -96,7 +98,9 @@ def update_meal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return meal_log_service.update_meal_log(db, current_user.id, log_id, req)
+    meal = meal_log_service.update_meal_log(db, current_user.id, log_id, req)
+    db.commit()
+    return meal
 
 
 @router.delete("/{log_id}", status_code=204)
@@ -106,3 +110,4 @@ def delete_meal(
     current_user: User = Depends(get_current_user),
 ):
     meal_log_service.delete_meal_log(db, current_user.id, log_id)
+    db.commit()

@@ -68,7 +68,7 @@ def create_goal(db: Session, user_id: str, req: GoalIn) -> Goal:
         active_from=now,
     )
     db.add(goal)
-    db.commit()
+    db.flush()
     db.refresh(goal)
     return goal
 

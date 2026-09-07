@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
+import { useDateStore } from '@/store/dateStore'
 import axios from 'axios'
 import { toast } from 'sonner'
 import { Send, Loader2, X, MessageCircle } from 'lucide-react'
@@ -22,6 +24,8 @@ export default function FloatingChatWidget() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const accessToken = useAuthStore((state) => state.accessToken)
+  const selectedDate = useDateStore((state) => state.selectedDate)
+  const queryClient = useQueryClient()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -54,6 +58,7 @@ export default function FloatingChatWidget() {
         '/api/v1/chat/message',
         {
           message: userInput,
+          ...(sessionId ? { session_id: sessionId } : {}),
         },
         {
           headers: {
@@ -70,6 +75,10 @@ export default function FloatingChatWidget() {
 
       setMessages((prev) => [...prev, assistantMessage])
       setSessionId(response.data.session_id)
+
+      // Refresh dashboard data in case the agent logged meals or changed goals
+      queryClient.invalidateQueries({ queryKey: ['meals', selectedDate] })
+      queryClient.invalidateQueries({ queryKey: ['daily-summary', selectedDate] })
     } catch (error) {
       console.error('Chat error:', error)
       if (axios.isAxiosError(error)) {
@@ -85,7 +94,7 @@ export default function FloatingChatWidget() {
   return (
     <div className="fixed bottom-8 right-8 z-50">
       {isOpen ? (
-        <Card className="w-96 h-[500px] shadow-xl flex flex-col bg-card border border-border rounded-lg overflow-hidden">
+        <Card className="w-[30rem] h-[500px] shadow-xl flex flex-col bg-card border border-border rounded-lg overflow-hidden">
           {/* Header */}
           <div
             className="p-4 flex justify-between items-start text-card-foreground"

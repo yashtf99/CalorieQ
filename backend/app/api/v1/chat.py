@@ -5,6 +5,8 @@ import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from langchain_core.messages import HumanMessage
+
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.orm.session import get_db
@@ -24,12 +26,12 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 class MessageRequest(BaseModel):
     message: str
+    session_id: Optional[str] = None
 
 
 class MessageResponse(BaseModel):
@@ -44,12 +46,17 @@ class SessionResponse(BaseModel):
     updated_at: str
 
 
+class ChatMessageOut(BaseModel):
+    user_query: str
+    chat_response: str
+    created_at: str
+
+
 @router.post("/sessions")
 def create_new_session(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> SessionResponse:
-    """Create a new chat session for the user."""
     session = create_session(db, user.id)
     return SessionResponse(
         id=session.id,
@@ -64,7 +71,6 @@ def get_sessions(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[SessionResponse]:
-    """List user's chat sessions."""
     sessions = list_user_sessions(db, user.id)
     return [
         SessionResponse(
@@ -77,13 +83,29 @@ def get_sessions(
     ]
 
 
+@router.get("/sessions/{session_id}/messages")
+def get_messages(
+    session_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[ChatMessageOut]:
+    msgs = get_session_messages(db, session_id, user.id)
+    return [
+        ChatMessageOut(
+            user_query=m.user_query,
+            chat_response=m.chat_response,
+            created_at=m.created_at.isoformat(),
+        )
+        for m in msgs
+    ]
+
+
 @router.delete("/sessions/{session_id}")
 def remove_session(
     session_id: str,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Delete a chat session."""
     delete_user_session(db, session_id, user.id)
     return {"message": "Session deleted"}
 
@@ -94,62 +116,27 @@ def send_message(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> MessageResponse:
-    """Send a message and get or create a session automatically.
-
-    Lazy creates session on first message, reuses within timeout window.
-
-    Args:
-        message: User's query
-
-    Returns:
-        Assistant's response with session ID
-    """
+    """Send a message. Uses req.session_id if provided, otherwise auto-selects session."""
     session = None
     try:
-        logger.info(f"Chat message from user {user.id}: {req.message}")
+        if req.session_id:
+            session = get_session(db, req.session_id, user.id)
+        else:
+            session = get_or_create_session(db, user.id)
 
-        # Get or create session (lazy creation)
-        logger.info("Creating/fetching session")
-        session = get_or_create_session(db, user.id)
-        logger.info(f"Got session {session.id}")
-
-        # Set context for tools (tools will retrieve this)
-        logger.info("Setting agent context")
         AgentContext.set(user.id, db)
 
-        # Get agent (independent, no user/session coupling)
-        logger.info("Getting agent")
         agent = get_agent()
-        logger.info("Agent obtained")
 
-        # Load conversation history for this session
-        logger.info("Loading chat history")
         history = DatabaseChatMessageHistory(session.id, user.id, db)
         chat_history = history.messages
-        logger.info(f"Loaded {len(chat_history)} messages")
 
-        # Invoke agent with history
-        logger.info("Invoking agent")
-        try:
-            result = agent.invoke({
-                "messages": [*chat_history, {"role": "user", "content": req.message}],
-            })
-            logger.info("Agent invocation successful")
-        except Exception as tool_error:
-            logger.error(f"Agent invocation failed: {tool_error}", exc_info=True)
-            # Return a user-friendly error message
-            return MessageResponse(
-                response="I encountered an error processing your request. Please try again.",
-                session_id=session.id
-            )
+        result = agent.invoke({
+            "messages": [*chat_history, HumanMessage(content=req.message)],
+        })
 
-        # Extract response from result
-        logger.info("Extracting response from result")
         response_text = result["messages"][-1].content if result.get("messages") else "I couldn't process that. Please try again."
-        logger.info(f"Got response: {response_text[:100]}")
 
-        # Save message to database
-        logger.info("Saving message to database")
         add_message(
             db,
             session.id,
@@ -157,20 +144,18 @@ def send_message(
             user_query=req.message,
             chat_response=response_text,
         )
-        logger.info("Message saved")
 
         return MessageResponse(response=response_text, session_id=session.id)
 
-    except Exception as e:
+    except Exception:
         logger.exception("Chat endpoint error")
         if session:
             return MessageResponse(
                 response="An error occurred. Please try again.",
-                session_id=session.id
+                session_id=session.id,
             )
         raise
     finally:
-        # Clear context after use
         try:
             AgentContext.clear()
         except Exception:

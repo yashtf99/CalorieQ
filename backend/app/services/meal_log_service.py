@@ -136,7 +136,7 @@ def create_meal_log(db: Session, user_id: str, req: MealLogIn) -> MealLog:
         )
 
     db.add(log)
-    db.commit()
+    db.flush()
     db.refresh(log)
     return log
 
@@ -221,7 +221,7 @@ def update_meal_log(db: Session, user_id: str, log_id: str, req: MealLogPatchIn)
         if req.sodium_mg is not None:
             log.sodium_mg = req.sodium_mg
 
-    db.commit()
+    db.flush()
     db.refresh(log)
     return log
 
@@ -229,4 +229,4 @@ def update_meal_log(db: Session, user_id: str, log_id: str, req: MealLogPatchIn)
 def delete_meal_log(db: Session, user_id: str, log_id: str) -> None:
     log = get_meal_log(db, user_id, log_id)
     db.delete(log)
-    db.commit()
+    db.flush()

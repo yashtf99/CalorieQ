@@ -5,6 +5,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 # Import all models so Base.metadata knows about them before create_all
+from app.models.chat_message import ChatMessage  # noqa: F401
+from app.models.chat_session import ChatSession  # noqa: F401
 from app.models.food_item import FoodItem  # noqa: F401
 from app.models.food_portion import FoodPortion  # noqa: F401
 from app.models.goal import Goal  # noqa: F401
