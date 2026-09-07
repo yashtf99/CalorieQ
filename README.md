@@ -6,7 +6,7 @@ dinner, set personalized health goals, and visualize macro and micronutrient tre
 | Layer | Stack |
 |---|---|
 | **Backend** | Python 3.13 · FastAPI · SQLAlchemy 2 · Pydantic v2 · LangGraph |
-| **Database** | SQLite (dev) / MySQL 8+ (prod) |
+| **Database** | SQLite (dev) |
 | **Frontend** | React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · shadcn/ui · TanStack Query v5 |
 | **AI** | AWS Bedrock (Claude) — image extraction + conversational chat agent |
 
